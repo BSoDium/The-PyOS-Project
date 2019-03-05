@@ -14,7 +14,7 @@ class SkySphere(DirectObject):
 		self.sphere.setTexScale(TextureStage.getDefault(), .5)
 		# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
 		
-		tex = loader.loadCubeMap("BlueGreenNebula_#.png")
+		tex = loader.loadCubeMap("skybox.png")
 		self.sphere.setTexture(tex)
 		# Load the cube map and apply it to the sphere.
 		
