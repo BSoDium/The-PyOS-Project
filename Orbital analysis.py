@@ -43,8 +43,7 @@ def real_anomaly(E,e):
     v=2*np.arctan(sqrt(1+e/1-e))*tant(E/2)
     return v
 
-
-''' If we want to know what is the eccentricity of an orbit thanks to apoapsis radius(Ra) and periapsis radius(Rp), with :
+''' If we want to know what is the eccentricity of an orbit, thanks to apoapsis radius(Ra) and periapsis radius(Rp), with :
 e = (Ra-Rp)/(Ra+Rp)
 or 
 e = sqrt(1-(b²/a²))   with b the half minor axis and a the half major axis
