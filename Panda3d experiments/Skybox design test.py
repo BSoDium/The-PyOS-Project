@@ -13,7 +13,8 @@ class SkySphere(DirectObject):
 		self.sphere.setTexPos(TextureStage.getDefault(), 0, 0, 0)
 		self.sphere.setTexScale(TextureStage.getDefault(), .5)
 		# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
-		
+		# Perhaps going to add some features here :
+
 		tex = loader.loadCubeMap("skybox.png")
 		self.sphere.setTexture(tex)
 		# Load the cube map and apply it to the sphere.
@@ -34,3 +35,4 @@ class SkySphere(DirectObject):
 
 SS = SkySphere()
 run()
+
