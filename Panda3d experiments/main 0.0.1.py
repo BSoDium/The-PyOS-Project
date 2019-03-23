@@ -29,6 +29,8 @@ class Core(object): # main class
             self.radius=radius
             self.rspeed=rspeed
             self.kind=id
+
+
             
 
     #def load_assets():
