@@ -1,36 +1,33 @@
-import direct.directbase.DirectStart,os
-from direct.showbase.DirectObject import DirectObject
-from panda3d.core import Texture, TextureStage, DirectionalLight, AmbientLight, TexGenAttrib, VBase4
+from math import *
+from direct.showbase.ShowBase import ShowBase
+from direct.task import Task
+from pandac.PandaModules import *
+ConfigVariableBool('fullscreen').setValue(1)
+wp=WindowProperties()
+wp.setSize(1600,900)
+#from direct.directbase.DirectStart import *
 
-class SkySphere(DirectObject):
-	def __init__(self):		
-		self.sphere = loader.loadModel("generic_planet.egg")
-		# Load the most common spherical planet 3d model (I finally got this blender plugin to work).
-		# I'm planning on doing some 3d model in-game modification later
-		
-		self.sphere.setTexGen(TextureStage.getDefault(), TexGenAttrib.MWorldPosition)
-		self.sphere.setTexProjector(TextureStage.getDefault(), render, self.sphere)
-		self.sphere.setTexPos(TextureStage.getDefault(), 0, 0, 0)
-		self.sphere.setTexScale(TextureStage.getDefault(), .5)
-		# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
-		
-		skybox = loader.loadCubeMap(os.path.dirname(os.path.abspath(__file__))+"\\skybox.png")
-		self.sphere.setTexture(tex)
-		# Load the cube map and apply it to the sphere.
-		
-		self.sphere.setLightOff()
-		# Tell the sphere to ignore the lighting.
-			
-		self.sphere.setScale(1000)
-		# Increase the scale of the sphere so it will be larger than the scene.
-		
-		self.sphere.reparentTo(render)
-		# Reparent the sphere to render so you can see it.
-		
-		result = self.sphere.writeBamFile("SkySphere.bam")
-		# Save out the bam file.
-		print(result)
-		# Print out whether the saving succeeded or not.
+class core(ShowBase):
 
-SS = SkySphere()
-run()
+	def __init__(self):
+		ShowBase.__init__(self)
+		self.scene=self.loader.loadModel("generic_planet.egg")
+		self.scene.reparentTo(self.render)
+		self.scene.setScale(1,1,1)
+		self.scene.setPos(-8,42,0)
+
+		self.taskMgr.add(self.Cameraspin, "SpinCameraTask") #I believe taskMgr stands for "task manager"
+
+
+	def Cameraspin(self,task):
+		angle_deg=task.time*6.0
+		angle_rad=angle_deg*(pi/180.0)
+		self.camera.setPos(20*sin(angle_rad),-20*cos(angle_rad),3)
+		self.camera.setHpr(angle_deg,0,0)
+		return task.cont
+	
+	
+
+launch=core()
+launch.run()
+
