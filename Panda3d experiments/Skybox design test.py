@@ -1,6 +1,6 @@
-import direct.directbase.DirectStart
+import direct.directbase.DirectStart,os
 from direct.showbase.DirectObject import DirectObject
-from pandac.PandaModules import Texture, TextureStage, DirectionalLight, AmbientLight, TexGenAttrib, VBase4
+from panda3d.core import Texture, TextureStage, DirectionalLight, AmbientLight, TexGenAttrib, VBase4
 
 class SkySphere(DirectObject):
 	def __init__(self):		
@@ -14,7 +14,7 @@ class SkySphere(DirectObject):
 		self.sphere.setTexScale(TextureStage.getDefault(), .5)
 		# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
 		
-		tex = loader.loadCubeMap("skybox.png")
+		skybox = loader.loadCubeMap(os.path.dirname(os.path.abspath(__file__))+"\\skybox.png")
 		self.sphere.setTexture(tex)
 		# Load the cube map and apply it to the sphere.
 		
