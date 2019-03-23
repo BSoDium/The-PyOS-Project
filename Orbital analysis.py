@@ -26,7 +26,7 @@ def average_anomaly(Ms,m,t,a):
     return M
 
 ''' The average eccentric is the angle between the periapsis and the actual position IN the orbit of the studied object. Let's not the average eccentric 'E'. Then we have :
-The iteration : E[i+1]=(M-a*(E[i]cos(E[i]-sin(E[i]))/1-a*cos(E[i])) , by doing 4 iteration, we obtain a precise value of E for a t time'''
+The itération : E[i+1]=(M-a*(E[i]cos(E[i]-sin(E[i]))/1-a*cos(E[i])) , by doing 4 iteration, we obtain a precise value of E for a t time'''
 
 def average_eccentric(M,a):
     E=np.pi
