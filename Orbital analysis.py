@@ -169,12 +169,14 @@ and we will find what we wanted.'''
 
 # We will search the z-component of Lo(M) which is the orbital kinetic torque at a M point.   
 
-def inital_orbital_kinetic_torque(F,m,vo): # v0 is the inital speed, it will be entered by the user. 
-        #Lo(M)=F^m*v
+def inital_orbital_kinetic_torque_z(F,m,M,vo): # v0 is the inital speed, it will be entered by the user. 
+        #Lo(M)=F^m*v   with m the total mass
         #    ->
         # on ez : Lzo(M)=F*m*r*(dθ/dt) = F*m*r*Ω = F*m*v      # Where Ω is the angular speed , v=Ω*r
-        L=F*m*v0
+        L=F*(m+M)*v0
         return L
+
+# Tilt : 
 
 
 
