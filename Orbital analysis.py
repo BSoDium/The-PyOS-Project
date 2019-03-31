@@ -56,9 +56,12 @@ def average_eccentric(M,e):
 tan(v/2) : sqrt(1+e/1-e)*tan(E/2)
 '''
 
-def true_anomaly(E,e):
+def true_anomaly(E,e):   # E = average anomaly, e = eccentricity
     v=2*np.arctan(sqrt(1+e/1-e))*np.tan(E/2)
     return v
+
+
+
 
 ''' If we want to know what is the eccentricity of an orbit, thanks to apoapsis radius(Ra) and periapsis radius(Rp), with :
 e = (Ra-Rp)/(Ra+Rp)
@@ -73,6 +76,15 @@ def e(Ra,Rp):
 def e_V2(a,b):
     e=sqrt(1-(b**2/a**2))
     return e
+
+
+''' Thanks all others functions we can determine for a 't' time, the value or the distance between the object and its center. :
+We have a r(E) relation, but also a E(t) relation so a r(E(t)) relation , a is the half major axis again'''
+
+def r(E,a,e):
+        r=a*(1-e*cos(E))
+        return r
+
 
 ## What parameters will the user enter ?
 
@@ -89,6 +101,7 @@ So what the user will enter ?
 - 'b' The half minor axis
 - 'm' Mass of the studied object (or add it when he want to study an object)
 - 'M' Mass of the massive object
+- 'v0' The inital speed
 
 With theses value we can now know we will be the studied object in the orbit.
 
@@ -100,7 +113,7 @@ Let's define now how to define this orbit with theses parameters.
 ##       \__/ |  |_) | |_ 
                   
 
-''' To locate a position in 3D, especially a orbit, we will need three parameters : the tilt, the longitude of the ascending node and the argument of the periapsis.
+''' To locate a position in 3D, especially a orbit, we will need two parameters : the tilt and the argument of the periapsis.
 Each can be found with user's entries.
 
 Let's consider the cylindrical coordinates :
@@ -127,23 +140,32 @@ def F(M,m,r):  # Will be oriented in the contrary sens of the radial vector. So 
 
 
 ''' The orbital kinetic torque in a O point is :1
-    -------->    ->  ->              ->             ->      ->   ->      ->                                  ->
-    L[orbital]= m*v ^ F = m*((dr/dt)*er + r*(dθ/dt)*eθ + (dz/dt)*ez) ^ F*er = F*m*r*(dθ/dt)*ez + F*m*(dz/dt)*eθ
+    -------->   ->  ->      ->            ->             ->           ->                     ->               ->
+    L[orbital]= F ^ mv  = F*er m*((dr/dt)*er + r*(dθ/dt)*eθ + (dz/dt)*ez) ^  = F*m*r*(dθ/dt)*ez - F*m*(dz/dt)*eθ
 
       ->             
-So in ez : L[orbital-z] = F*m*r*(dθ/dt)
+So on ez : L[orbital-z] = F*m*r*(dθ/dt)
       -> 
-   in eθ : L[orbital-θ] = F*m*(dz/dt)
+   on eθ : L[orbital-θ] = -F*m*(dz/dt)
 
-In this ellipse the variation of z is the sum of the altitudes (one is positive and the other is negative, or both are null) of the periapsis and the apoapsis in absolute value.
 '''
 
-# Position of the periapsis and the apoapsis :
+'''Find the initial orbital kentic torque, it won't change, find the tilt by calculating the angle between the initial orbital kinetic torque and the ecuador plan. Then remove 90°
+and we will find what we wanted.'''
 
-''' We can find the position of the periapsis , it is when E=0.'''
+# We will search the z-component of Lo(M) which is the orbital kinetic torque at a M point.   
 
-def periapsis_position(E):
+def inital_orbital_kinetic_torque(F,m,vo): # v0 is the inital speed, it will be entered by the user. 
+        #Lo(M)=F^m*v
+        #    ->
+        # on ez : Lzo(M)=F*m*r*(dθ/dt) = F*m*r*Ω = F*m*v      # Where Ω is the angular speed , v=Ω*r
+        L=F*m*v0
+        return L
 
 
-def orbital_kinetic_torque(F,r,m,E):   # It wll be orthogonal to the plan of the orbit. Here E = θ , because we found it before, this is the true anomaly.
-    
+''' Let's find now the argument of the periapsis :
+
+We will name ω the argument of the periapsis, which can be found thanks :
+ω = arccos((n*e)/|n|*|e|)
+Where n is a vector pointing towards the ascending node and e the eccentricity vector pointing towards the periapsis.
+'''
