@@ -33,34 +33,32 @@ import numpy as np
 
 #    About the position : 
 
-''' Let's consider the average anomaly, which allows us to know the fraction of the orbital period that has elapsed since the last pass to the periapsis, expressed as an angle.
-    We note the average anomaly 'M', we have : 'G' the gravitationnal constant, 'a' the half major axis, 'Ms' the mass of the planet, 'm' the mass of the studied object.
+''' Let's consider the mean anomaly, which allows us to know the fraction of the orbital period that has elapsed since the last pass to the periapsis, expressed as an angle.
+    We note the mean anomaly 'M', we have : 'G' the gravitationnal constant, 'a' the half major axis, 'Ms' the mass of the planet, 'm' the mass of the studied object.
     M = sqrt(G(Ms+m)/a³)*t
 '''
 
-def average_anomaly(M,m,t,a):
+def mean_anomaly(M,m,t,a):
     M=sqrt(6.67408*10**-11*(Ms+m)/a**3)*t
     return M
 
-''' The average eccentric is the angle between the periapsis and the actual position projected in the cercle excircled perpendicularly to the half major axis. 
-Let's note the average eccentric 'E'. Then with 'e' the eccentricity , we have :
-The iteration : E[i+1]=(M-e*(E[i]cos(E[i]-sin(E[i]))/1-e*cos(E[i])) , by doing 4 iterations, we obtain a precise value of E for a t time.'''
+''' The eccentric anomaly is the angle between the periapsis and the actual position projected in the cercle excircled perpendicularly to the half major axis. 
+Let's note the eccentric anomaly 'E'. Then with 'e' the eccentricity , we have :
+The iteration : E[i+1]=(M-e*(E[i]cos(E[i]-sin(E[i]))/1-e*cos(E[i])) , by doing 4 iterations, we can obtain a precise value of E for a t time.'''
 
-def average_eccentric(M,e):
+def eccentric_anomaly(M,e):
     E=np.pi
     for i in range(1,5):
         E=(M-e*(E*cos(E)-sin(E)))/1-e*cos(E)
     return E
 
-''' Finally the true anomaly is the angle between the periapsis and the actual position of the studied object (that's what we want). We note the real anomaly 'v', then :
+''' Finally the true anomaly is the angle between the periapsis and the actual position of the studied object (that's what we want). We name the real anomaly 'v', then :
 tan(v/2) : sqrt(1+e/1-e)*tan(E/2)
 '''
 
-def true_anomaly(E,e):   # E = average anomaly, e = eccentricity
+def true_anomaly(E,e):   # E = eccentric anomaly, e = eccentricity
     v=2*np.arctan(sqrt(1+e/1-e))*np.tan(E/2)
     return v
-
-
 
 
 ''' If we want to know what is the eccentricity of an orbit, thanks to apoapsis radius(Ra) and periapsis radius(Rp), with :
@@ -85,6 +83,21 @@ def r(E,a,e):
         r=a*(1-e*cos(E))
         return r
 
+''' We can now know what will be the orbital period and finally know what will be the 't' time where the studied object is at the periapsis : 
+by calculating the mean angular motion , named n'''
+
+def n(M,m,a):
+        n=sqrt(6.67408*10**-11*(m+M)/a**3)
+        return n
+
+def T(n):
+        T=2*np.pi/n
+        return T     # Orbital period
+
+def t_periapsis(M,n,t):
+        tperi=M/n-t
+        return tperi   # Time t0 where the object is at the periapsis
+
 
 ## What parameters will the user enter ?
 
@@ -97,11 +110,12 @@ As the eccentricity can be found with Ra and Rp we can just ask these values, th
 Al least we must ask the value of masses.
 
 So what the user will enter ? 
-- 'a' The half major axis
-- 'b' The half minor axis
+- 'a' The half major axis       (not mandatory)
+- 'b' The half minor axis       (same)
 - 'm' Mass of the studied object (or add it when he want to study an object)
 - 'M' Mass of the massive object
 - 'v0' The inital speed
+- The initial position by a click in the graphic structure
 
 With theses value we can now know we will be the studied object in the orbit.
 
@@ -163,9 +177,12 @@ def inital_orbital_kinetic_torque(F,m,vo): # v0 is the inital speed, it will be 
         return L
 
 
+
 ''' Let's find now the argument of the periapsis :
 
 We will name ω the argument of the periapsis, which can be found thanks :
 ω = arccos((n*e)/|n|*|e|)
 Where n is a vector pointing towards the ascending node and e the eccentricity vector pointing towards the periapsis.
 '''
+
+
