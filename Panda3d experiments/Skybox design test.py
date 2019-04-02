@@ -2,28 +2,29 @@ from math import *
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from pandac.PandaModules import *
-ConfigVariableBool('fullscreen').setValue(1)
-wp=WindowProperties()
-wp.setSize(1600,900)
+from panda3d.core import WindowProperties
+#ConfigVariableBool('fullscreen').setValue(1)
+#wp=WindowProperties()
+#wp.setSize(1600,900)
 #from direct.directbase.DirectStart import *
 
 class core(ShowBase):
-
 	def __init__(self):
 		ShowBase.__init__(self)
-		self.scene=self.loader.loadModel("generic_planet.egg")
+		#wp=WindowProperties()
+		#wp.setSize(1600,900)
+        #self.win.requestProperties(wp)
+		self.scene=self.loader.loadModel("random_rock.egg")
 		self.scene.reparentTo(self.render)
-		self.scene.setScale(1,1,1)
-		self.scene.setPos(-8,42,0)
+		self.scene.setScale(3,3,3)
+		self.scene.setPos(0,0,0)
+		self.taskMgr.add(self.objectspin, "SpinObjectTask")
 
-		self.taskMgr.add(self.Cameraspin, "SpinCameraTask") #I believe taskMgr stands for "task manager"
 
-
-	def Cameraspin(self,task):
-		angle_deg=task.time*6.0
-		angle_rad=angle_deg*(pi/180.0)
-		self.camera.setPos(20*sin(angle_rad),-20*cos(angle_rad),3)
-		self.camera.setHpr(angle_deg,0,0)
+	def objectspin(self,task):
+		angle_Z=task.time*0.1
+		angle_Y=task.time*0.05
+		self.scene.setHpr(self.scene,0,angle_Y,angle_Z) #p stands for pitch, H for heading, and r for roll
 		return task.cont
 	
 	
