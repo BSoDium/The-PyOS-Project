@@ -1,37 +1,41 @@
-import direct.directbase.DirectStart,os
-from direct.showbase.DirectObject import DirectObject
-from panda3d.core import Texture, TextureStage, DirectionalLight, AmbientLight, TexGenAttrib, VBase4
+from math import *
+from direct.showbase.ShowBase import ShowBase
+from direct.task import Task
+from pandac.PandaModules import *
+from panda3d.core import WindowProperties
+from direct.showbase import DirectObject # event handling
+import os
 
-class SkySphere(DirectObject):
-	def __init__(self):		
-		self.sphere = loader.loadModel("generic_planet.egg")
-		# Load the most common spherical planet 3d model (I finally got this blender plugin to work).
-		# I'm planning on doing some 3d model in-game modification later
-		
-		self.sphere.setTexGen(TextureStage.getDefault(), TexGenAttrib.MWorldPosition)
-		self.sphere.setTexProjector(TextureStage.getDefault(), render, self.sphere)
-		self.sphere.setTexPos(TextureStage.getDefault(), 0, 0, 0)
-		self.sphere.setTexScale(TextureStage.getDefault(), .5)
-		# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
-		
-		skybox = loader.loadCubeMap(os.path.dirname(os.path.abspath(__file__))+"\\skybox.png")
-		self.sphere.setTexture(tex)
-		# Load the cube map and apply it to the sphere.
-		
-		self.sphere.setLightOff()
-		# Tell the sphere to ignore the lighting.
-			
-		self.sphere.setScale(1000)
-		# Increase the scale of the sphere so it will be larger than the scene.
-		
-		self.sphere.reparentTo(render)
-		# Reparent the sphere to render so you can see it.
-		
-		result = self.sphere.writeBamFile("SkySphere.bam")
-		# Save out the bam file.
-		print(result)
-		# Print out whether the saving succeeded or not.
+#ConfigVariableBool('fullscreen').setValue(1)
+#wp=WindowProperties()
+#wp.setSize(1600,900)
+#from direct.directbase.DirectStart import *
 
-SS = SkySphere()
-run()
+class core(ShowBase):
+	def __init__(self):
+		ShowBase.__init__(self)
+		self.scene=self.loader.loadModel("random_rock.egg")
+		wp = WindowProperties()
+		wp.setFullscreen(1)
+		wp.setSize(1920, 1080)
+		Z=0
+		Y=0
+		base.openMainWindow()
+		base.win.requestProperties(wp)
+		base.graphicsEngine.openWindows()
+		self.scene.reparentTo(self.render)
+		self.scene.setScale(3,3,3)
+		self.scene.setPos(0,0,0)
+		self.objectspin(Z,Y)
+
+	def objectspin(self,angle_Z,angle_Y):
+		angle_Z+=1
+		angle_Y+=0.05
+		self.scene.setHpr(self.scene,0,angle_Y,angle_Z) #p stands for pitch, H for heading, and r for roll
+		return 0
+	
+	
+
+launch=core()
+base.run()
 
