@@ -14,24 +14,28 @@ import os
 class core(ShowBase):
 	def __init__(self):
 		ShowBase.__init__(self)
-		#self.scene.wp.setSize(1600,900)
-        #self.scene.requestProperties(wp)
 		self.scene=self.loader.loadModel("random_rock.egg")
-		
+		wp = WindowProperties()
+		wp.setFullscreen(1)
+		wp.setSize(1920, 1080)
+		Z=0
+		Y=0
+		base.openMainWindow()
+		base.win.requestProperties(wp)
+		base.graphicsEngine.openWindows()
 		self.scene.reparentTo(self.render)
 		self.scene.setScale(3,3,3)
 		self.scene.setPos(0,0,0)
-		self.taskMgr.add(self.objectspin, "SpinObjectTask")
+		self.objectspin(Z,Y)
 
-
-	def objectspin(self,task):
-		angle_Z=task.time*0.1
-		angle_Y=task.time*0.05
+	def objectspin(self,angle_Z,angle_Y):
+		angle_Z+=1
+		angle_Y+=0.05
 		self.scene.setHpr(self.scene,0,angle_Y,angle_Z) #p stands for pitch, H for heading, and r for roll
-		return task.cont
+		return 0
 	
 	
 
 launch=core()
-launch.run()
+base.run()
 
