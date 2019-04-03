@@ -3,6 +3,9 @@ from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from pandac.PandaModules import *
 from panda3d.core import WindowProperties
+from direct.showbase import DirectObject # event handling
+import os
+
 #ConfigVariableBool('fullscreen').setValue(1)
 #wp=WindowProperties()
 #wp.setSize(1600,900)
@@ -11,10 +14,10 @@ from panda3d.core import WindowProperties
 class core(ShowBase):
 	def __init__(self):
 		ShowBase.__init__(self)
-		#wp=WindowProperties()
-		#wp.setSize(1600,900)
-        #self.win.requestProperties(wp)
+		#self.scene.wp.setSize(1600,900)
+        #self.scene.requestProperties(wp)
 		self.scene=self.loader.loadModel("random_rock.egg")
+		
 		self.scene.reparentTo(self.render)
 		self.scene.setScale(3,3,3)
 		self.scene.setPos(0,0,0)
