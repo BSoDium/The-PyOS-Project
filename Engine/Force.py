@@ -27,3 +27,19 @@ def accélération(C):
     A[i]=O
     return A
 
+#
+
+def accelerationdual(S,M): #S is the "static object", the one that apply the force to the "moving" object M
+    G=6.673*10**-11
+    O=[]  #This will be the list with the accelerations for an object
+    d=sqrt((S[2]-M[2])**2+(S[3]-M[3])**2+(S[4]-M[4])**2)
+    x=(G*S[0]*(S[2]-M[2]))/d**2
+    y=(G*S[0]*(S[3]-M[3]))/d**2
+    z=(G*S[0]*(S[4]-M[4]))/d**2
+    O.append(x)
+    O.append(y)
+    O.append(z)
+    return O
+    
+    
+
