@@ -11,7 +11,7 @@ class core(ShowBase):
 		loadPrcFileData('', 'fullscreen true')
 		loadPrcFileData('','win-size 1600 900') #finalyyyyyyyyy got that f*cking fullscreen to woooork goddamit that was sooo f*cking hard to find
 		ShowBase.__init__(self)
-		self.ast=self.loader.loadModel("C:\Users\kelta\Documents\GitHub\Python-Orbital-Mechanics\Panda3d experiments\asteroid_1.egg")
+		self.ast=self.loader.loadModel("asteroid_1.egg")
 		self.earth=self.loader.loadModel("generic_planet.egg")
 		self.isphere=self.loader.loadModel("InvertedSphere.egg")
 		self.tex=loader.loadCubeMap('cubemap_#.png')

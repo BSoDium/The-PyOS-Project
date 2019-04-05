@@ -6,9 +6,10 @@ from panda3d.core import *
 from direct.showbase import DirectObject # event handling
 from direct.gui.OnscreenText import OnscreenText
 import os,sys
+from win32api import GetSystemMetrics #pywin32 package
 
 loadPrcFileData('', 'fullscreen true')
-loadPrcFileData('','win-size 1600 900') # fullscreen stuff
+loadPrcFileData('','win-size '+str(GetSystemMetrics(0))+' '+str(GetSystemMetrics(1))) # fullscreen stuff
 
 class world(ShowBase):
     def __init__(self):
