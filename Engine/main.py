@@ -67,7 +67,8 @@ class world(ShowBase):
             acceleration.append(Bdf)
         #update the bodies' position
         self.speed_update(acceleration)
-        self.disp_update(self.pos_update())
+        self.pos_update()
+        self.disp_update()
 
         return task.cont
     
@@ -79,24 +80,16 @@ class world(ShowBase):
             #print(self.data[c][3],self.data[c][4],self.data[c][5],"#")
     
     def pos_update(self):
-        ancient=[]
         for c in range(len(self.data)):
-            ancient.append([self.data[c][0],self.data[c][1],self.data[c][2]])
             self.data[c][0]+=self.timescale*self.data[c][3]
             self.data[c][1]+=self.timescale*self.data[c][4]
             self.data[c][2]+=self.timescale*self.data[c][5]
-        return ancient
+        return 0
     
-    def disp_update(self,ancient):
-        self.orbit_lines.append([])
+    def disp_update(self):
         for c in self.data:
             c[11].setPos(c[0],c[1],c[2])
-            self.orbit_lines[len(self.orbit_lines)-1].append(LineSegs())
-            self.orbit_lines[len(self.orbit_lines)-1][len(self.orbit_lines[len(self.orbit_lines)-1])-1].moveTo(ancient[len(self.orbit_lines[len(self.orbit_lines)-1])-1][0],ancient[len(self.orbit_lines[len(self.orbit_lines)-1])-1][1],ancient[len(self.orbit_lines[len(self.orbit_lines)-1])-1][2])
-            self.orbit_lines[len(self.orbit_lines)-1][len(self.orbit_lines[len(self.orbit_lines)-1])-1].drawTo(c[0],c[1],c[2])
-            self.orbit_lines[len(self.orbit_lines)-1][len(self.orbit_lines[len(self.orbit_lines)-1])-1].setThickness(1)
-            self.orbit_lines[len(self.orbit_lines)-1][len(self.orbit_lines[len(self.orbit_lines)-1])-1].setColor(0.043,0.674,0.674,1)
-            NodePath(self.orbit_lines[len(self.orbit_lines)-1][len(self.orbit_lines[len(self.orbit_lines)-1])-1].create()).reparentTo(render)
+            
 
             
 
