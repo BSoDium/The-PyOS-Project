@@ -5,40 +5,56 @@ from pandac.PandaModules import *
 from panda3d.core import *
 from direct.showbase import DirectObject # event handling
 from direct.gui.OnscreenText import OnscreenText
-loadPrcFileData('', 'fullscreen true')
-loadPrcFileData('','win-size 1600 900') 
-#finalyyyyyyyyy got that f*cking fullscreen to woooork goddamit that was sooo f*cking hard to find
 
 class core(ShowBase):
 	def __init__(self):
+		loadPrcFileData('', 'fullscreen true')
+		loadPrcFileData('','win-size 1600 900') #finalyyyyyyyyy got that f*cking fullscreen to woooork goddamit that was sooo f*cking hard to find
 		ShowBase.__init__(self)
-		self.ast=self.loader.loadModel("random_rock.egg")
-		self.sun=self.loader.loadModel("low_poly_planet.egg")
+		self.ast=self.loader.loadModel("asteroid_1.egg")
+		self.earth=self.loader.loadModel("generic_planet.egg")
+		self.isphere=self.loader.loadModel("InvertedSphere.egg")
+		self.tex=loader.loadCubeMap('cubemap_#.png')
+
 		
-		base.openMainWindow()
 		base.graphicsEngine.openWindows()
 		self.ast.reparentTo(self.render)
 		self.ast.setScale(1,1,1)
-		self.bodyplace=(0,0,0) #positional variable
+		self.bodyplace=(0,0,0) #positional variable, temporary
 		self.ast.setPos(0,0,0) 
 		self.step=0 #calculation variable, counts the number of frames passed
 
-		self.sun.reparentTo(self.render)
-		self.sun.setScale(1,1,1)
-		self.sun.setPos(self.bodyplace)
+		self.earth.reparentTo(self.render)
+		self.earth.setScale(6,6,6)
+		self.earth.setPos(self.bodyplace)
 		#now the lighting
 		#currently under work
-		
+		self.plight1=PointLight('plight1')
+		self.plight1.setColorTemperature(6500)
+		self.plnp1=render.attachNewNode(self.plight1)
+		self.plnp1.setPos(10,10,0)
+		self.earth.setLight(self.plnp1)
+
 		self.plight = PointLight('pointlight')
-		self.plight.setColorTemperature(700) #color defined by temperature, pretty usefull in this case
-		self.plight.setAttenuation((1,0,1)) #see https://www.panda3d.org/manual/?title=Lighting&oldid=4737 for more info
+		self.plight.setColorTemperature(7000) #color defined by temperature, pretty usefull in this case
+		self.plight.setAttenuation((1,0,0.001)) #see https://www.panda3d.org/manual/?title=Lighting&oldid=4737 for more info
 		self.plnp = render.attachNewNode(self.plight)
 		self.plnp.setPos(0,0,0)
 		self.ast.setLight(self.plnp)
-		
+
+		#cubemap stuff
+		self.isphere.setTexGen(TextureStage.getDefault(), TexGenAttrib.MWorldCubeMap)
+		self.isphere.setTexProjector(TextureStage.getDefault(), render, self.isphere)
+		self.isphere.setTexPos(TextureStage.getDefault(), 0, 0, 0)
+		self.isphere.setTexScale(TextureStage.getDefault(), .5) # feeling a bit deezy...
+		# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
+		self.isphere.setTexture(self.tex)
+		self.isphere.setLightOff()
+		self.isphere.setScale(1000) #hope this is enough
+		self.isphere.reparentTo(self.render)
+
+
 		#task manager stuff (further calculations will be here)
-		self.angle_Y=0
-		self.angle_Z=0
 		self.taskMgr.add(self.objectspin,"objectspintask")
 	
 	def showsimpletext(self,content,pos,scale): #shows a predefined, basic text on the screen (variable output only)
@@ -46,17 +62,13 @@ class core(ShowBase):
 	
 	def temp_pos_update(self):
 		self.step+=0.01
-		self.bodyplace=(7*cos(self.step),7*sin(self.step),0)
+		self.bodyplace=(15*cos(self.step),15*sin(self.step),0)
 		self.ast.setPos(self.bodyplace)
 
 	def objectspin(self,task):
 		self.temp_pos_update()
-		try:
-			self.angle_Y+=0.01
-		except:
-			pass
-		render.setLight(self.plnp)
-		self.ast.setHpr(self.ast,0,0,0) #p stands for pitch, H for heading, and r for roll
+		self.ast.setHpr(self.ast,1,0,0) #p stands for pitch, H for heading, and r for roll, this, in particular rotates the object by 1 degree
+		self.earth.setHpr(self.earth,-0.1,0,0)
 		return Task.cont  
 	
 	
