@@ -11,8 +11,11 @@ class core(ShowBase):
 		loadPrcFileData('', 'fullscreen true')
 		loadPrcFileData('','win-size 1600 900') #finalyyyyyyyyy got that f*cking fullscreen to woooork goddamit that was sooo f*cking hard to find
 		ShowBase.__init__(self)
-		self.ast=self.loader.loadModel("asteroid_1.egg")
+		self.ast=self.loader.loadModel("C:\Users\kelta\Documents\GitHub\Python-Orbital-Mechanics\Panda3d experiments\asteroid_1.egg")
 		self.earth=self.loader.loadModel("generic_planet.egg")
+		self.isphere=self.loader.loadModel("InvertedSphere.egg")
+		self.tex=loader.loadCubeMap('cubemap_#.png')
+
 		
 		base.graphicsEngine.openWindows()
 		self.ast.reparentTo(self.render)
@@ -38,6 +41,18 @@ class core(ShowBase):
 		self.plnp = render.attachNewNode(self.plight)
 		self.plnp.setPos(0,0,0)
 		self.ast.setLight(self.plnp)
+
+		#cubemap stuff
+		self.isphere.setTexGen(TextureStage.getDefault(), TexGenAttrib.MWorldCubeMap)
+		self.isphere.setTexProjector(TextureStage.getDefault(), render, self.isphere)
+		self.isphere.setTexPos(TextureStage.getDefault(), 0, 0, 0)
+		self.isphere.setTexScale(TextureStage.getDefault(), .5) # feeling a bit deezy...
+		# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
+		self.isphere.setTexture(self.tex)
+		self.isphere.setLightOff()
+		self.isphere.setScale(1000) #hope this is enough
+		self.isphere.reparentTo(self.render)
+
 
 		#task manager stuff (further calculations will be here)
 		self.taskMgr.add(self.objectspin,"objectspintask")
