@@ -21,6 +21,9 @@ class world(ShowBase):
         self.u_constant=6.67408*10**(-11) #just a quick reminder
         self.isphere=self.loader.loadModel("InvertedSphere.egg") #loading skybox structure
         self.tex=loader.loadCubeMap('cubemap_#.png')
+
+        self.orbit_lines=[] #under developement
+        
         base.graphicsEngine.openWindows()
         for c in self.data:
             c[11].reparentTo(self.render)
@@ -64,8 +67,7 @@ class world(ShowBase):
             acceleration.append(Bdf)
         #update the bodies' position
         self.speed_update(acceleration)
-        self.pos_update()
-        self.disp_update()
+        self.disp_update(self.pos_update())
 
         return task.cont
     
@@ -77,14 +79,27 @@ class world(ShowBase):
             #print(self.data[c][3],self.data[c][4],self.data[c][5],"#")
     
     def pos_update(self):
+        ancient=[]
         for c in range(len(self.data)):
+            ancient.append([self.data[c][0],self.data[c][1],self.data[c][2]])
             self.data[c][0]+=self.timescale*self.data[c][3]
             self.data[c][1]+=self.timescale*self.data[c][4]
             self.data[c][2]+=self.timescale*self.data[c][5]
+        return ancient
     
-    def disp_update(self):
+    def disp_update(self,ancient):
+        self.orbit_lines.append([])
         for c in self.data:
             c[11].setPos(c[0],c[1],c[2])
+            self.orbit_lines[len(self.orbit_lines)-1].append(LineSegs())
+            self.orbit_lines[len(self.orbit_lines)-1][len(self.orbit_lines[len(self.orbit_lines)-1])-1].moveTo(ancient[len(self.orbit_lines[len(self.orbit_lines)-1])-1][0],ancient[len(self.orbit_lines[len(self.orbit_lines)-1])-1][1],ancient[len(self.orbit_lines[len(self.orbit_lines)-1])-1][2])
+            self.orbit_lines[len(self.orbit_lines)-1][len(self.orbit_lines[len(self.orbit_lines)-1])-1].drawTo(c[0],c[1],c[2])
+            self.orbit_lines[len(self.orbit_lines)-1][len(self.orbit_lines[len(self.orbit_lines)-1])-1].setThickness(1)
+            self.orbit_lines[len(self.orbit_lines)-1][len(self.orbit_lines[len(self.orbit_lines)-1])-1].setColor(0.043,0.674,0.674,1)
+            NodePath(self.orbit_lines[len(self.orbit_lines)-1][len(self.orbit_lines[len(self.orbit_lines)-1])-1].create()).reparentTo(render)
+
+            
+
 
     def dual_a(self,S,M): #S is the "static object", the one that apply the force to the "moving" object M, S seems to contain 
         O=[]  #This will be the list with the accelerations for an object 
