@@ -16,8 +16,10 @@ class world(ShowBase):
         ShowBase.__init__(self)
         self.timescale=10
         self.pathname = os.path.dirname(sys.argv[0]) #currently unused
+
         self.light_Mngr=[]
-        self.data=[[0,0,0,0,0,0,20,20,20,100000.00,True,self.loader.loadModel("generic_planet.egg"),"pluto",True],[40,0,0,0,0.003,0,1,1,1,20.00,True,self.loader.loadModel("asteroid_1.egg"),"Ottilia",False],[0,70,10,0,0.005,0,3,3,3,40.00,True,self.loader.loadModel("asteroid_1.egg"),"Selena",False]] # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,file,id,lightsource] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - file: panda3d tupple - id: str - lightsource: boolean -
+        self.data=[[0,0,0,0,0,0,1,1,1,100000.00,True,self.loader.loadModel("generic_planet.egg"),"lp_planet",False],[40,0,0,0,0.003,0,1,1,1,20.00,True,self.loader.loadModel("asteroid_1.egg"),"Ottilia",False],[0,70,10,0,0.005,0,3,3,3,40.00,True,self.loader.loadModel("asteroid_1.egg"),"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,self.loader.loadModel("low_poly_planet.egg"),"Sun",True]] # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,file,id,lightsource] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - file: panda3d tupple - id: str - lightsource: boolean -
+        
         self.u_constant=6.67408*10**(-11) #just a quick reminder
         self.isphere=self.loader.loadModel("InvertedSphere.egg") #loading skybox structure
         self.tex=loader.loadCubeMap('cubemap_#.png')
@@ -36,6 +38,7 @@ class world(ShowBase):
                 self.light_Mngr[len(self.light_Mngr)-1][1].setPos(c[0],c[1],c[2])
                 render.setLight(self.light_Mngr[len(self.light_Mngr)-1][1]) 
                 self.light_Mngr.append([AmbientLight(c[12]+"_self")])
+                self.light_Mngr[len(self.light_Mngr)-1][0].setColorTemperature(2000)
                 self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
                 c[11].setLight(self.light_Mngr[len(self.light_Mngr)-1][1])
                 print("lights: 0")
@@ -87,8 +90,15 @@ class world(ShowBase):
         return 0
     
     def disp_update(self):
+        count=0 #local counter
         for c in self.data:
             c[11].setPos(c[0],c[1],c[2])
+            if c[13]:
+                self.light_Mngr[count][1].setPos(c[0],c[1],c[2])
+                count+=2
+            
+
+        
             
 
             
