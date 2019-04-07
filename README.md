@@ -1,3 +1,2 @@
-Python-Orbital-Mechanics V 0.0.1 early alpha: 
-we're still in an early code testing phase
-(currently trying the choices the panda3d lib can give us in terms of coding)
+Python-Orbital-Mechanics V 0.0.5 alpha: 
+The game mechanics do work, but there is still a lot of work to do (see project for more to-do-list info)

@@ -1,11 +1,11 @@
 <CoordinateSystem> { Z-up } 
 <Material> Material.002 {
-  <Scalar> diffr { 0.069932 }
-  <Scalar> diffg { 0.336998 }
-  <Scalar> diffb { 0.640000 }
+  <Scalar> diffr { 0.087415 }
+  <Scalar> diffg { 0.421247 }
+  <Scalar> diffb { 0.800000 }
   <Scalar> diffa { 0.614815 }
-  <Scalar> specr { 0.500000 }
-  <Scalar> specg { 0.500000 }
+  <Scalar> specr { 0.106058 }
+  <Scalar> specg { 0.404026 }
   <Scalar> specb { 0.500000 }
   <Scalar> shininess { 12.5 }
   <Scalar> ambr { 1.000000 }
