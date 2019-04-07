@@ -1,8 +1,8 @@
 <CoordinateSystem> { Z-up } 
 <Material> Material.011 {
   <Scalar> diffr { 0.000000 }
-  <Scalar> diffg { 0.070884 }
-  <Scalar> diffb { 0.640000 }
+  <Scalar> diffg { 0.044302 }
+  <Scalar> diffb { 0.400000 }
   <Scalar> specr { 0.462156 }
   <Scalar> specg { 0.500000 }
   <Scalar> specb { 0.453376 }

@@ -10,15 +10,20 @@ from win32api import GetSystemMetrics #pywin32 package
 
 loadPrcFileData('', 'fullscreen true')
 loadPrcFileData('','win-size '+str(GetSystemMetrics(0))+' '+str(GetSystemMetrics(1))) # fullscreen stuff
+loadPrcFileData('','window-title PyOS')
 
 class world(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
         self.timescale=10
+        self.worldscale=0.1
         self.pathname = os.path.dirname(sys.argv[0]) #currently unused
 
         self.light_Mngr=[]
-        self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel("lp_planet_0.egg"),self.loader.loadModel("lp_planet_1.egg"),self.loader.loadModel("lp_planet_2.egg"),self.loader.loadModel("lp_planet_3.egg")],"lp_planet",False],[40,0,0,0,0.003,0,1,1,1,20.00,True,[self.loader.loadModel("asteroid_1.egg")],"Ottilia",False],[0,70,10,0,0.005,0,3,3,3,40.00,True,[self.loader.loadModel("asteroid_1.egg")],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel("sun1.egg"),self.loader.loadModel("sun2.egg")],"Sun",True]] # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[files],id,lightsource] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean -
+        self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel("lp_planet_0.egg"),self.loader.loadModel("lp_planet_1.egg"),self.loader.loadModel("lp_planet_2.egg"),self.loader.loadModel("lp_planet_3.egg")],"lp_planet",False],
+        [40,0,0,0,0.003,0,1,1,1,20.00,True,[self.loader.loadModel("asteroid_1.egg"),self.loader.loadModel("asteroid_2.egg")],"Ottilia",False],
+        [0,70,10,0,0.005,0,3,3,3,40.00,True,[self.loader.loadModel("asteroid_1.egg"),self.loader.loadModel("asteroid_2.egg")],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel("sun1.egg"),self.loader.loadModel("sun2.egg")],"Sun",True]] 
+        # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[files],id,lightsource] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean -
         
         self.u_constant=6.67408*10**(-11) #just a quick reminder
         self.isphere=self.loader.loadModel("InvertedSphere.egg") #loading skybox structure
@@ -39,7 +44,7 @@ class world(ShowBase):
                 self.light_Mngr[len(self.light_Mngr)-1][1].setPos(c[0],c[1],c[2])
                 render.setLight(self.light_Mngr[len(self.light_Mngr)-1][1]) 
                 self.light_Mngr.append([AmbientLight(c[12]+"_self")])
-                self.light_Mngr[len(self.light_Mngr)-1][0].setColorTemperature(2000)
+                self.light_Mngr[len(self.light_Mngr)-1][0].setColorTemperature(1000)
                 self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
                 for u in range(len(c[11])):
                     c[11][u].setLight(self.light_Mngr[len(self.light_Mngr)-1][1])
@@ -74,7 +79,6 @@ class world(ShowBase):
         self.speed_update(acceleration)
         self.pos_update()
         self.disp_update()
-
         return task.cont
     
     def speed_update(self,a):
@@ -100,8 +104,6 @@ class world(ShowBase):
                 self.light_Mngr[count][1].setPos(c[0],c[1],c[2])
                 count+=2 #we have to change the position of the pointlight, not the ambientlight
             
-
-        
     def dual_a(self,S,M): #S is the "static object", the one that apply the force to the "moving" object M, S seems to contain 
         O=[]  #This will be the list with the accelerations for an object 
         d=sqrt((S[1]-M[1])**2+(S[2]-M[2])**2+(S[3]-M[3])**2)
