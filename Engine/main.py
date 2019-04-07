@@ -15,14 +15,15 @@ loadPrcFileData('','window-title PyOS')
 class world(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
+        self.dir=Filename.fromOsSpecific(os.getcwd())
         self.timescale=10
         self.worldscale=0.1
         self.pathname = os.path.dirname(sys.argv[0]) #currently unused
 
         self.light_Mngr=[]
-        self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel("lp_planet_0.egg"),self.loader.loadModel("lp_planet_1.egg"),self.loader.loadModel("lp_planet_2.egg"),self.loader.loadModel("lp_planet_3.egg")],"lp_planet",False],
-        [40,0,0,0,0.003,0,1,1,1,20.00,True,[self.loader.loadModel("asteroid_1.egg"),self.loader.loadModel("asteroid_2.egg")],"Ottilia",False],
-        [0,70,10,0,0.005,0,3,3,3,40.00,True,[self.loader.loadModel("asteroid_1.egg"),self.loader.loadModel("asteroid_2.egg")],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel("sun1.egg"),self.loader.loadModel("sun2.egg")],"Sun",True]] 
+        self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/lp_planet_0.egg"),self.loader.loadModel(self.dir+"/lp_planet_0.egg"),self.loader.loadModel(self.dir+"/lp_planet_2.egg"),self.loader.loadModel(self.dir+"/lp_planet_3.egg")],"lp_planet",False],
+        [40,0,0,0,0.003,0,1,1,1,20.00,True,[self.loader.loadModel(self.dir+"/asteroid_1.egg"),self.loader.loadModel(self.dir+"/asteroid_2.egg")],"Ottilia",False],
+        [0,70,10,0,0.005,0,3,3,3,40.00,True,[self.loader.loadModel(self.dir+"/asteroid_1.egg"),self.loader.loadModel(self.dir+"/asteroid_2.egg")],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/sun1.egg"),self.loader.loadModel(self.dir+"/sun2.egg")],"Sun",True]] 
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[files],id,lightsource] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean -
         
         self.u_constant=6.67408*10**(-11) #just a quick reminder
