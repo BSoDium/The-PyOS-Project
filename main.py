@@ -22,14 +22,14 @@ class world(ShowBase):
         # btw I found something about energy transmition through thermal radiation. I think it uses some Boltzmann formula stuff. Link here:
         # https://fr.wikibooks.org/wiki/Plan%C3%A9tologie/La_temp%C3%A9rature_de_surface_des_plan%C3%A8tes#Puissance_re%C3%A7ue_par_la_Terre
         self.light_Mngr=[]
-        self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/lp_planet_0.egg"),self.loader.loadModel(self.dir+"/lp_planet_0.egg"),self.loader.loadModel(self.dir+"/lp_planet_2.egg"),self.loader.loadModel(self.dir+"/lp_planet_3.egg")],"lp_planet",False],
-        [40,0,0,0,0.003,0,1,1,1,20.00,True,[self.loader.loadModel(self.dir+"/asteroid_1.egg"),self.loader.loadModel(self.dir+"/asteroid_2.egg")],"Ottilia",False],
-        [0,70,10,0,0.005,0,3,3,3,40.00,True,[self.loader.loadModel(self.dir+"/asteroid_1.egg"),self.loader.loadModel(self.dir+"/asteroid_2.egg")],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/sun1.egg"),self.loader.loadModel(self.dir+"/sun2.egg")],"Sun",True]] 
+        self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),self.loader.loadModel(self.dir+"/Engine/lp_planet_2.egg"),self.loader.loadModel(self.dir+"/Engine/lp_planet_3.egg")],"lp_planet",False],
+        [40,0,0,0,0.003,0,1,1,1,20.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg"),self.loader.loadModel(self.dir+"/Engine/asteroid_2.egg")],"Ottilia",False],
+        [0,70,10,0,0.005,0,3,3,3,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg"),self.loader.loadModel(self.dir+"/Engine/asteroid_2.egg")],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg"),self.loader.loadModel(self.dir+"/Engine/sun2.egg")],"Sun",True]] 
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[files],id,lightsource] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean -
         
         self.u_constant=6.67408*10**(-11) #just a quick reminder
-        self.isphere=self.loader.loadModel(self.dir+"/InvertedSphere.egg") #loading skybox structure
-        self.tex=loader.loadCubeMap(self.dir+'/cubemap_#.png')
+        self.isphere=self.loader.loadModel(self.dir+"/Engine/InvertedSphere.egg") #loading skybox structure
+        self.tex=loader.loadCubeMap(self.dir+'/Engine/cubemap_#.png')
 
         self.orbit_lines=[] #under developement
         
