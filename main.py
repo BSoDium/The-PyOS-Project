@@ -6,11 +6,15 @@ from panda3d.core import *
 from direct.showbase import DirectObject # event handling
 from direct.gui.OnscreenText import OnscreenText
 import os,sys
-from win32api import GetSystemMetrics #pywin32 package
+import ctypes
+
+user32 = ctypes.windll.user32
+user32.SetProcessDPIAware() #windows cross platform compatibility, fixes the getsystemmetrics bug
 
 loadPrcFileData('', 'fullscreen true')
-loadPrcFileData('','win-size '+str(GetSystemMetrics(0))+' '+str(GetSystemMetrics(1))) # fullscreen stuff
+loadPrcFileData('','win-size '+str(user32.GetSystemMetrics(0))+' '+str(user32.GetSystemMetrics(1))) # fullscreen stuff for one monitor, for multi monitor setup try 78 79
 loadPrcFileData('','window-title PyOS')
+loadPrcFileData('','load-display pandagl')
 
 class world(ShowBase):
     def __init__(self):
@@ -47,7 +51,8 @@ class world(ShowBase):
             self.collision_solids[len(self.collision_solids)-1].append(c[11][0].attachNewNode(CollisionNode(c[12])))
             # the structure of the collision_solids list will be: [[1,2],[1,2],[1,2],...]
             self.collision_solids[len(self.collision_solids)-1][1].node().addSolid(self.collision_solids[len(self.collision_solids)-1][0]) #I am definitely not explaining that
-            self.collision_solids[len(self.collision_solids)-1][1].show() # debugging purposes only
+            #self.collision_solids[len(self.collision_solids)-1][1].show() # debugging purposes only
+            print("collision: ok")
             print("placing body: done")
             if c[13]:
                 self.light_Mngr.append([PointLight(c[12]+"_other")])
@@ -76,6 +81,10 @@ class world(ShowBase):
         return OnscreenText(text=content,pos=pos,scale=scale)
     
     def placement_Mngr(self,task): #main game mechanics
+        queue = CollisionHandlerQueue()
+        for intake in queue.get_entries():
+            print(intake) #experimental
+        # collision events are now under constant surveillance
         acceleration=[]
         for c in range(len(self.data)): #selects the analysed body
             var=self.data[c]
