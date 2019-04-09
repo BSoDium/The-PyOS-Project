@@ -1,5 +1,5 @@
 ## Warning ! To any user who downloaded the source files before 04/09/2019:
-I have found a huge bug which made the game crash on start because of wrong `GetSystemMetrics()` data, do not worry, this issue has been fixed, I hope you can see this message. If you do, just download the files again. Exectuting the code should be the only thing to do then 
+I have found a huge bug which made the game crash on start because of wrong `GetSystemMetrics()` data, do not worry, this issue has been fixed, I hope you can see this message. If you do, just download the files again. Executing the code should be the only thing to do after this.
 
 ## Python-Orbital-Mechanics V 0.0.5 alpha: 
 The game mechanics do work, but there is still a lot of work to do (see project for more to-do-list info)
