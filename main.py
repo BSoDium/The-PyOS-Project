@@ -1,7 +1,6 @@
 from math import *
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from pandac.PandaModules import *
 from panda3d.core import *
 from direct.showbase import DirectObject # event handling
 from direct.gui.OnscreenText import OnscreenText
@@ -19,6 +18,9 @@ loadPrcFileData('','load-display pandagl')
 class world(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
+        #debug
+        self.debug=False
+        #debug
         self.dir=Filename.fromOsSpecific(os.getcwd())
         self.timescale=10
         self.worldscale=0.1
@@ -27,9 +29,9 @@ class world(ShowBase):
         # https://fr.wikibooks.org/wiki/Plan%C3%A9tologie/La_temp%C3%A9rature_de_surface_des_plan%C3%A8tes#Puissance_re%C3%A7ue_par_la_Terre
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
-        self.data=[[0,0,0,0,0.003,0,3,3,3,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg")],"lp_planet",False],
+        self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg")],"lp_planet",False],
         [40,0,0,0,0.003,0,1,1,1,20.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg")],"Ottilia",False],
-        [0,70,10,0,0.005,0,3,3,3,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg")],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg")],"Sun",True]] 
+        [0,70,10,0,0.005,0,0.2,0.2,0.2,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg")],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg")],"Sun",True]] 
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[files],id,lightsource,radius] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean - radius: positive value -
         #if you want the hitbox to be correctly scaled, and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
         self.u_constant=6.67408*10**(-11) #just a quick reminder
@@ -52,10 +54,11 @@ class world(ShowBase):
             self.collision_solids.append([CollisionSphere(0,0,0,self.u_radius)]) #the radius is calculated by using the average scale + the u_radius 
             # still not working
             self.collision_solids[len(self.collision_solids)-1].append(c[11][0].attachNewNode(CollisionNode(c[12])))
-            # the structure of the collision_solids list will be: [[1,2],[1,2],[1,2],...]
+            # the structure of the collision_solids list will be: [[(0,1,2),1],[(0,1,2),1],[(0,1,2),1],...]
             # asteroids and irregular shapes must be slightly bigger than their hitbox in order to avoid visual glitches
             self.collision_solids[len(self.collision_solids)-1][1].node().addSolid(self.collision_solids[len(self.collision_solids)-1][0]) #I am definitely not explaining that
-            #self.collision_solids[len(self.collision_solids)-1][1].show() # debugging purposes only
+            if self.debug:
+                self.collision_solids[len(self.collision_solids)-1][1].show() # debugging purposes only
             print("collision: ok")
             print("placing body: done")
             if c[13]:
@@ -79,15 +82,25 @@ class world(ShowBase):
         self.isphere.setLightOff()
         self.isphere.setScale(10000) #hope this is enough
         self.isphere.reparentTo(self.render)
+        # quick test
+        self.ctrav = CollisionTraverser()
+        self.queue = CollisionHandlerQueue()
+        for n in self.collision_solids:
+            self.ctrav.add_collider(n[1],self.queue)
+        # the traverser will be automatically updated, no need to repeat this every frame
+        # debugging only
+        if self.debug:
+            self.ctrav.showCollisions(render) 
         self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
     
     def showsimpletext(self,content,pos,scale): #shows a predefined, basic text on the screen (variable output only)
         return OnscreenText(text=content,pos=pos,scale=scale)
     
-    def placement_Mngr(self,task): #main game mechanics
-        queue = CollisionHandlerQueue()
-        for intake in queue.get_entries():
-            print(intake) #experimental
+    def placement_Mngr(self,task): #main game mechanics # does not work
+        self.ctrav.traverse(render)
+        if self.debug:
+            for intake in self.queue.getEntries():
+                print(intake) #experimental, debugging purposes only
         # collision events are now under constant surveillance
         acceleration=[]
         for c in range(len(self.data)): #selects the analysed body
