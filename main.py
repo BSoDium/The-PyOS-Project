@@ -17,9 +17,12 @@ loadPrcFileData('','load-display pandagl')
 
 class world(ShowBase):
     def __init__(self):
-        ShowBase.__init__(self)
+        try:
+            ShowBase.__init__(self)
+        except:
+            print(":( something went wrong: error while loading OpenGL")
         #debug
-        self.debug=False
+        self.debug=False #REMEMBER TO TURN THIS OFF WHEN COMMITTING THIS TO GITHUB YOU GODDAM MORRON !!!
         #debug
         self.dir=Filename.fromOsSpecific(os.getcwd())
         self.timescale=10
@@ -45,58 +48,60 @@ class world(ShowBase):
         
         # see https://www.panda3d.org/manual/?title=Collision_Solids for further collision interaction informations
         base.graphicsEngine.openWindows()
-        for c in self.data: # loading and displaying the preloaded planets and bodies
-            for u in range(len(c[11])): # loading each sub-file
-                c[11][u].reparentTo(self.render)
-                c[11][u].setScale(c[6],c[7],c[8])
-                c[11][u].setPos(c[0],c[1],c[2])
-                #setting the collision solid up
-            self.collision_solids.append([CollisionSphere(0,0,0,self.u_radius)]) #the radius is calculated by using the average scale + the u_radius 
-            # still not working
-            self.collision_solids[len(self.collision_solids)-1].append(c[11][0].attachNewNode(CollisionNode(c[12])))
-            # the structure of the collision_solids list will be: [[(0,1,2),1],[(0,1,2),1],[(0,1,2),1],...]
-            # asteroids and irregular shapes must be slightly bigger than their hitbox in order to avoid visual glitches
-            self.collision_solids[len(self.collision_solids)-1][1].node().addSolid(self.collision_solids[len(self.collision_solids)-1][0]) #I am definitely not explaining that
+        try:
+            for c in self.data: # loading and displaying the preloaded planets and bodies
+                for u in range(len(c[11])): # loading each sub-file
+                    c[11][u].reparentTo(self.render)
+                    c[11][u].setScale(c[6],c[7],c[8])
+                    c[11][u].setPos(c[0],c[1],c[2])
+                    #setting the collision solid up
+                self.collision_solids.append([CollisionSphere(0,0,0,self.u_radius)]) #the radius is calculated by using the average scale + the u_radius 
+                # still not working
+                self.collision_solids[len(self.collision_solids)-1].append(c[11][0].attachNewNode(CollisionNode(c[12])))
+                # the structure of the collision_solids list will be: [[(0,1,2),1],[(0,1,2),1],[(0,1,2),1],...]
+                # asteroids and irregular shapes must be slightly bigger than their hitbox in order to avoid visual glitches
+                self.collision_solids[len(self.collision_solids)-1][1].node().addSolid(self.collision_solids[len(self.collision_solids)-1][0]) #I am definitely not explaining that
+                if self.debug:
+                    self.collision_solids[len(self.collision_solids)-1][1].show() # debugging purposes only
+                print("collision: ok")
+                print("placing body: done")
+                if c[13]:
+                    self.light_Mngr.append([PointLight(c[12]+"_other")])
+                    self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
+                    self.light_Mngr[len(self.light_Mngr)-1][1].setPos(c[0],c[1],c[2])
+                    render.setLight(self.light_Mngr[len(self.light_Mngr)-1][1]) 
+                    self.light_Mngr.append([AmbientLight(c[12]+"_self")])
+                    self.light_Mngr[len(self.light_Mngr)-1][0].setColorTemperature(1000)
+                    self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
+                    for u in range(len(c[11])):
+                        c[11][u].setLight(self.light_Mngr[len(self.light_Mngr)-1][1])
+                    print("lights: done")
+                print("loaded new body, out: done")
+            self.isphere.setTexGen(TextureStage.getDefault(), TexGenAttrib.MWorldCubeMap)  # *takes a deep breath* cubemap stuff !
+            self.isphere.setTexProjector(TextureStage.getDefault(), render, self.isphere)
+            self.isphere.setTexPos(TextureStage.getDefault(), 0, 0, 0)
+            self.isphere.setTexScale(TextureStage.getDefault(), .5) # that's a thing...
+            self.isphere.setTexture(self.tex)# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
+            self.isphere.setLightOff()
+            self.isphere.setScale(10000) #hope this is enough
+            self.isphere.reparentTo(self.render)
+            # quick test
+            self.ctrav = CollisionTraverser()
+            self.queue = CollisionHandlerQueue()
+            for n in self.collision_solids:
+                self.ctrav.add_collider(n[1],self.queue)
+            # the traverser will be automatically updated, no need to repeat this every frame
+            # debugging only
             if self.debug:
-                self.collision_solids[len(self.collision_solids)-1][1].show() # debugging purposes only
-            print("collision: ok")
-            print("placing body: done")
-            if c[13]:
-                self.light_Mngr.append([PointLight(c[12]+"_other")])
-                self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
-                self.light_Mngr[len(self.light_Mngr)-1][1].setPos(c[0],c[1],c[2])
-                render.setLight(self.light_Mngr[len(self.light_Mngr)-1][1]) 
-                self.light_Mngr.append([AmbientLight(c[12]+"_self")])
-                self.light_Mngr[len(self.light_Mngr)-1][0].setColorTemperature(1000)
-                self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
-                for u in range(len(c[11])):
-                    c[11][u].setLight(self.light_Mngr[len(self.light_Mngr)-1][1])
-                print("lights: done")
-            print("loaded new body, out: done")
-        
-        self.isphere.setTexGen(TextureStage.getDefault(), TexGenAttrib.MWorldCubeMap)# *takes a deep breath* cubemap stuff !
-        self.isphere.setTexProjector(TextureStage.getDefault(), render, self.isphere)
-        self.isphere.setTexPos(TextureStage.getDefault(), 0, 0, 0)
-        self.isphere.setTexScale(TextureStage.getDefault(), .5) # that's a thing...
-        self.isphere.setTexture(self.tex)# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
-        self.isphere.setLightOff()
-        self.isphere.setScale(10000) #hope this is enough
-        self.isphere.reparentTo(self.render)
-        # quick test
-        self.ctrav = CollisionTraverser()
-        self.queue = CollisionHandlerQueue()
-        for n in self.collision_solids:
-            self.ctrav.add_collider(n[1],self.queue)
-        # the traverser will be automatically updated, no need to repeat this every frame
-        # debugging only
-        if self.debug:
-            self.ctrav.showCollisions(render) 
-        self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
+                self.ctrav.showCollisions(render) 
+            self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
+        except:
+            print(":( something went wrong: 3d models could not be loaded")
     
     def showsimpletext(self,content,pos,scale): #shows a predefined, basic text on the screen (variable output only)
         return OnscreenText(text=content,pos=pos,scale=scale)
     
-    def placement_Mngr(self,task): #main game mechanics # does not work
+    def placement_Mngr(self,task): #main game mechanics, frame updating function (kinda)
         self.ctrav.traverse(render)
         if self.debug:
             for intake in self.queue.getEntries():
@@ -141,7 +146,7 @@ class world(ShowBase):
                 self.light_Mngr[count][1].setPos(c[0],c[1],c[2])
                 count+=2 #we have to change the position of the pointlight, not the ambientlight
             
-    def dual_a(self,S,M): #S is the "static object", the one that apply the force to the "moving" object M, S seems to contain 
+    def dual_a(self,S,M): #S is the "static object", the one that applies the force to the "moving" object M
         O=[]  #This will be the list with the accelerations for an object 
         d=sqrt((S[1]-M[1])**2+(S[2]-M[2])**2+(S[3]-M[3])**2)
         x=(self.u_constant*S[0]*(S[1]-M[1]))/d**2
