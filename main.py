@@ -20,19 +20,19 @@ class world(ShowBase):
         try:
             ShowBase.__init__(self)
         except:
-            print(":( something went wrong: error while loading OpenGL")
+            raise window_error(":( something went wrong: error while loading OpenGL")
         #debug
         self.debug=False #REMEMBER TO TURN THIS OFF WHEN COMMITTING THIS TO GITHUB YOU GODDAM MORRON !!!
         #debug
         self.dir=Filename.fromOsSpecific(os.getcwd())
         self.timescale=10
         self.worldscale=0.1
-        self.pathname = os.path.dirname(sys.argv[0]) #currently unused
+        self.collision_status=False # Keep this on False, that's definitely not a setting
         # btw I found something about energy transmition through thermal radiation. I think it uses some Boltzmann formula stuff. Link here:
         # https://fr.wikibooks.org/wiki/Plan%C3%A9tologie/La_temp%C3%A9rature_de_surface_des_plan%C3%A8tes#Puissance_re%C3%A7ue_par_la_Terre
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
-        self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg")],"lp_planet",False],
+        self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/Planete_tellurique.egg")],"lp_planet",False],
         [40,0,0,0,0.003,0,1,1,1,20.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg")],"Ottilia",False],
         [0,70,10,0,0.005,0,0.2,0.2,0.2,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg")],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg")],"Sun",True]] 
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[files],id,lightsource,radius] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean - radius: positive value -
@@ -85,7 +85,7 @@ class world(ShowBase):
             self.isphere.setLightOff()
             self.isphere.setScale(10000) #hope this is enough
             self.isphere.reparentTo(self.render)
-            # quick test
+            # collision traverser and other collision stuff # that's super important, and super tricky to explain so just check the wiki
             self.ctrav = CollisionTraverser()
             self.queue = CollisionHandlerQueue()
             for n in self.collision_solids:
@@ -96,16 +96,19 @@ class world(ShowBase):
                 self.ctrav.showCollisions(render) 
             self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
         except:
-            print(":( something went wrong: 3d models could not be loaded")
+            raise loader_error(":( something went wrong: 3d models could not be loaded")
     
     def showsimpletext(self,content,pos,scale): #shows a predefined, basic text on the screen (variable output only)
         return OnscreenText(text=content,pos=pos,scale=scale)
     
     def placement_Mngr(self,task): #main game mechanics, frame updating function (kinda)
         self.ctrav.traverse(render)
-        if self.debug:
-            for intake in self.queue.getEntries():
-                print(intake) #experimental, debugging purposes only
+        if self.queue.getNumEntries():
+            for entry in self.queue.getEntries():
+                # print(entry)#experimental, debugging purposes only
+                #print(entry.getInteriorPoint(entry.getIntoNodePath()))# we have to run a collision check for each couple
+                self.collision_log(entry)
+            # print "out"
         # collision events are now under constant surveillance
         acceleration=[]
         for c in range(len(self.data)): #selects the analysed body
@@ -156,6 +159,18 @@ class world(ShowBase):
         O.append(y)
         O.append(z)
         return O 
+    
+    def collision_log(self,entry):
+        from_pos=[self.data[n][11] for n in range(len(self.data))].index([entry.getFromNodePath().getParent()])
+        into_pos=[self.data[n][11] for n in range(len(self.data))].index([entry.getIntoNodePath().getParent()]) #find the nodepath in the list
+        self.momentum_transfer()
+        return 0
+    
+    def momentum_transfer(self):
+        return 0
+    
+    def collision_gfx(self):
+        return 0
 
 launch=world()
 base.run()
