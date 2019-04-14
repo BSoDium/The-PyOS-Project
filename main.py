@@ -27,13 +27,13 @@ class world(ShowBase):
         self.dir=Filename.fromOsSpecific(os.getcwd())
         self.timescale=10
         self.worldscale=0.1
-        self.collision_status=False # Keep this on False, that's definitely not a setting
+        self.collision_status=False # Keep this on False, that's definitely not a setting # currently unused
         # btw I found something about energy transmition through thermal radiation. I think it uses some Boltzmann formula stuff. Link here:
         # https://fr.wikibooks.org/wiki/Plan%C3%A9tologie/La_temp%C3%A9rature_de_surface_des_plan%C3%A8tes#Puissance_re%C3%A7ue_par_la_Terre
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
         self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/Planete_tellurique.egg")],"lp_planet",False],
-        [40,0,0,0,0.003,0,1,1,1,20.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg")],"Ottilia",False],
+        [40,0,0,0,0.003,0,0.5,0.5,0.5,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Dark_soul.egg")],"Ottilia",False],
         [0,70,10,0,0.005,0,0.2,0.2,0.2,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg")],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg")],"Sun",True]] 
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[files],id,lightsource,radius] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean - radius: positive value -
         #if you want the hitbox to be correctly scaled, and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
@@ -104,6 +104,7 @@ class world(ShowBase):
     def placement_Mngr(self,task): #main game mechanics, frame updating function (kinda)
         self.ctrav.traverse(render)
         if self.queue.getNumEntries():
+            print(self.queue.getNumEntries())# debug
             for entry in self.queue.getEntries():
                 # print(entry)#experimental, debugging purposes only
                 #print(entry.getInteriorPoint(entry.getIntoNodePath()))# we have to run a collision check for each couple
@@ -163,10 +164,26 @@ class world(ShowBase):
     def collision_log(self,entry):
         from_pos=[self.data[n][11] for n in range(len(self.data))].index([entry.getFromNodePath().getParent()])
         into_pos=[self.data[n][11] for n in range(len(self.data))].index([entry.getIntoNodePath().getParent()]) #find the nodepath in the list
-        self.momentum_transfer()
+        self.momentum_transfer(from_pos,into_pos,entry)
+        self.collision_gfx()
         return 0
     
-    def momentum_transfer(self):
+    def momentum_transfer(self,f_pos,i_pos,entry):
+        print("colliding") # debug, makes the game laggy
+        #that part is completely fucked up
+        if sqrt((entry.getInteriorPoint(entry.getIntoNodePath())[0]-entry.getSurfacePoint(entry.getIntoNodePath())[0])**2+(entry.getInteriorPoint(entry.getIntoNodePath())[1]-entry.getSurfacePoint(entry.getIntoNodePath())[1])**2+(entry.getInteriorPoint(entry.getIntoNodePath())[2]-entry.getSurfacePoint(entry.getIntoNodePath())[2])**2)>=2*(self.data[f_pos][6]+self.data[f_pos][7]+self.data[f_pos][8])*self.u_radius/3:
+            for c in range(len(self.data[f_pos][11])):
+                self.collision_solids[f_pos][1].detachNode()
+                self.collision_solids[f_pos][1]=None
+                self.data[f_pos][11][c].detachNode()
+                self.data[f_pos][11][c]=None
+            self.data[i_pos][6],self.data[i_pos][7],self.data[i_pos][8]=self.data[i_pos][6]*(self.data[i_pos][9]+self.data[f_pos][9]),self.data[i_pos][7]*(self.data[i_pos][9]+self.data[f_pos][9]),self.data[i_pos][8]*(self.data[i_pos][9]+self.data[f_pos][9])
+            self.data[i_pos][9]+=self.data[f_pos][9]
+            # scale updating
+            self.data[i_pos][11][0].setScale(self.data[i_pos][6],self.data[i_pos][7],self.data[i_pos][8])
+            # deleting the destroyed planet's data
+            self.data=self.data[:f_pos]+self.data[f_pos+1:len(self.data)]
+            print("planet destroyed")
         return 0
     
     def collision_gfx(self):
