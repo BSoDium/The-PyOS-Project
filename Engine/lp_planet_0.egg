@@ -1,27 +1,12 @@
 <CoordinateSystem> { Z-up } 
-<Material> Material.013 {
-  <Scalar> diffr { 0.026744 }
-  <Scalar> diffg { 0.342956 }
-  <Scalar> diffb { 0.016573 }
-  <Scalar> specr { 0.500000 }
-  <Scalar> specg { 0.407285 }
-  <Scalar> specb { 0.005981 }
-  <Scalar> shininess { 12.5 }
-  <Scalar> ambr { 1.000000 }
-  <Scalar> ambg { 1.000000 }
-  <Scalar> ambb { 1.000000 }
-  <Scalar> emitr { 0.000000 }
-  <Scalar> emitg { 0.000000 }
-  <Scalar> emitb { 0.000000 }
-}
-
-<Material> Material.014 {
-  <Scalar> diffr { 0.266731 }
-  <Scalar> diffg { 0.186251 }
-  <Scalar> diffb { 0.045094 }
-  <Scalar> specr { 0.500000 }
-  <Scalar> specg { 0.500000 }
-  <Scalar> specb { 0.500000 }
+<Material> Material.002 {
+  <Scalar> diffr { 0.051398 }
+  <Scalar> diffg { 0.161446 }
+  <Scalar> diffb { 1.000000 }
+  <Scalar> diffa { 0.372240 }
+  <Scalar> specr { 0.000000 }
+  <Scalar> specg { 0.000000 }
+  <Scalar> specb { 0.000000 }
   <Scalar> shininess { 12.5 }
   <Scalar> ambr { 1.000000 }
   <Scalar> ambg { 1.000000 }
@@ -47,6 +32,22 @@
   <Scalar> emitb { 0.000000 }
 }
 
+<Material> Material.014 {
+  <Scalar> diffr { 0.266731 }
+  <Scalar> diffg { 0.186251 }
+  <Scalar> diffb { 0.045094 }
+  <Scalar> specr { 0.500000 }
+  <Scalar> specg { 0.500000 }
+  <Scalar> specb { 0.500000 }
+  <Scalar> shininess { 12.5 }
+  <Scalar> ambr { 1.000000 }
+  <Scalar> ambg { 1.000000 }
+  <Scalar> ambb { 1.000000 }
+  <Scalar> emitr { 0.000000 }
+  <Scalar> emitg { 0.000000 }
+  <Scalar> emitb { 0.000000 }
+}
+
 <Material> Material.012 {
   <Scalar> diffr { 0.571644 }
   <Scalar> diffg { 0.640000 }
@@ -63,14 +64,13 @@
   <Scalar> emitb { 0.000000 }
 }
 
-<Material> Material.002 {
-  <Scalar> diffr { 0.040889 }
-  <Scalar> diffg { 0.593083 }
-  <Scalar> diffb { 1.000000 }
-  <Scalar> diffa { 0.614815 }
+<Material> Material.013 {
+  <Scalar> diffr { 0.026744 }
+  <Scalar> diffg { 0.342956 }
+  <Scalar> diffb { 0.016573 }
   <Scalar> specr { 0.500000 }
-  <Scalar> specg { 0.500000 }
-  <Scalar> specb { 0.500000 }
+  <Scalar> specg { 0.407285 }
+  <Scalar> specb { 0.005981 }
   <Scalar> shininess { 12.5 }
   <Scalar> ambr { 1.000000 }
   <Scalar> ambg { 1.000000 }

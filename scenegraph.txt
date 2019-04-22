@@ -1,0 +1,54 @@
+PandaNode render S:(CullFaceAttrib LightAttrib RescaleNormalAttrib)
+  ModelNode camera T:m(pos 46.2309 95.6805 -3.57391 hpr 149.202 3.00388 22.6586 scale 1 1 1)
+    Camera cam ( PerspectiveLens )
+      PerspectiveLens fov = 50.942 30
+  ModelRoot Planete_tellurique.egg T:(pos 0.00643036 54.0654 0.000666082 hpr 0 0 -179.8)
+    GeomNode planet (3 geoms: S:(MaterialAttrib))
+    CollisionNode lp_planet (1 solids) (hidden)
+  ModelRoot Icy.egg T:(pos 7.84598 54.0647 0.00058461 hpr -179.001 0 0 scale 0.5)
+    GeomNode planet (3 geoms: S:(MaterialAttrib)) T:m(scale 0.99)
+    CollisionNode Ottilia (1 solids) (hidden)
+  ModelRoot asteroid_1.egg T:(pos 0.00111251 146.621 8.3345 hpr 0 0 0.400952 scale 0.2)
+    GeomNode asteroid (2 geoms: S:(MaterialAttrib)) T:m(scale 2.5)
+    CollisionNode Selena (1 solids) (hidden)
+  ModelRoot sun1.egg T:(pos 89.572 1.87555 8.95724 hpr 18.0204 0 0 scale 5) S:(LightAttrib)
+    GeomNode sun (2 geoms: S:(MaterialAttrib))
+    CollisionNode Sun (1 solids) (hidden)
+  ModelRoot sun1_atm.egg T:(pos 89.572 1.87555 8.95724 hpr 11.5416 11.4523 89.6026 scale 5) S:(LightAttrib)
+    GeomNode Icosphere (2 geoms: S:(MaterialAttrib TransparencyAttrib)) T:m(scale 1.04)
+  PointLight Sun_other ( PerspectiveLens PerspectiveLens PerspectiveLens PerspectiveLens PerspectiveLens PerspectiveLens ):
+    color 1 1 1 1
+    attenuation 1 0 0
+  AmbientLight Sun_self:
+    color 2.86751 0.548904 -0.0305816 1
+  ModelRoot InvertedSphere.egg T:(scale 10000) S:(LightAttrib TexMatrixAttrib TextureAttrib TexGenAttrib) E:(TexProjectorEffect)
+    PandaNode groundPlane_transform
+    GeomNode InvertedSphere:default1 (1 geoms)
+
+END
+PandaNode render S:(CullFaceAttrib LightAttrib RescaleNormalAttrib)
+  ModelNode camera
+    Camera cam ( PerspectiveLens )
+      PerspectiveLens fov = 50.942 30
+  ModelRoot Planete_tellurique.egg T:(pos 0.00747576 57.066 0.00073333 hpr 0 0 -169.8 scale 100020)
+    GeomNode planet (3 geoms: S:(MaterialAttrib))
+    CollisionNode lp_planet (1 solids) (hidden)
+  ModelRoot asteroid_1.egg T:(pos 0.00123114 150.153 8.16634 hpr 0 0 20.401 scale 0.2)
+    GeomNode asteroid (2 geoms: S:(MaterialAttrib)) T:m(scale 2.5)
+    CollisionNode Selena (1 solids) (hidden)
+  ModelRoot sun1.egg T:(pos 88.4208 2.19757 8.84214 hpr 19.0204 0 0 scale 5) S:(LightAttrib)
+    GeomNode sun (2 geoms: S:(MaterialAttrib))
+    CollisionNode Sun (1 solids) (hidden)
+  ModelRoot sun1_atm.egg T:(pos 88.4208 2.19757 8.84214 hpr 11.5044 12.4513 94.6107 scale 5) S:(LightAttrib)
+    GeomNode Icosphere (2 geoms: S:(MaterialAttrib TransparencyAttrib)) T:m(scale 1.04)
+  PointLight Sun_other ( PerspectiveLens PerspectiveLens PerspectiveLens PerspectiveLens PerspectiveLens PerspectiveLens ):
+    color 1 1 1 1
+    attenuation 1 0 0
+  AmbientLight Sun_self:
+    color 2.86751 0.548904 -0.0305816 1
+  ModelRoot InvertedSphere.egg T:(scale 10000) S:(LightAttrib TexMatrixAttrib TextureAttrib TexGenAttrib) E:(TexProjectorEffect)
+    PandaNode groundPlane_transform
+    GeomNode InvertedSphere:default1 (1 geoms)
+
+END
+
