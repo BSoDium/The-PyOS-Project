@@ -6,6 +6,7 @@ try:
     from panda3d.core import *
     from direct.showbase import DirectObject # event handling
     from direct.gui.OnscreenText import OnscreenText
+    from direct.filter.CommonFilters import CommonFilters
 except:
     sys.exit("please install library panda3d: pip install panda")
 import ctypes
@@ -18,6 +19,8 @@ if fullscreen:
     loadPrcFileData('','win-size '+str(user32.GetSystemMetrics(0))+' '+str(user32.GetSystemMetrics(1))) # fullscreen stuff for one monitor, for multi monitor setup try 78 79
 loadPrcFileData('','window-title PyOS')
 loadPrcFileData('','load-display pandagl')
+loadPrcFileData('','basic-shaders-only #f') # is that useful? 
+loadPrcFileData("", "textures-power-2 none")
 
 class world(ShowBase):
     def __init__(self):
@@ -31,6 +34,15 @@ class world(ShowBase):
         self.dir=Filename.fromOsSpecific(os.getcwd())
         self.timescale=10
         self.worldscale=0.1 # currently unused
+
+        self.state=['paused'] # state of things
+        self.iteration=0 #iteraton for the menu to be drawn once
+        # preparing the menu text list:
+        self.menu_text=[]
+        self.menu_text.append(self.showsimpletext('The PyOS project V0.5',(0,0.4),(0.07,0.07),None,(1,1,1,True)))
+        self.menu_text.append(self.showsimpletext('Resume',(0,0.3),(0.06,0.06),None,(1,1,1,True)))
+        self.menu_text.append(self.showsimpletext('Quit',(0,0.2),(0.06,0.06),None,(1,1,1,True)))
+
         self.collision_status=False # Keep this on False, that's definitely not a setting # currently unused
         # btw I found something about energy transmition through thermal radiation. I think it uses some Boltzmann formula stuff. Link here:
         # https://fr.wikibooks.org/wiki/Plan%C3%A9tologie/La_temp%C3%A9rature_de_surface_des_plan%C3%A8tes#Puissance_re%C3%A7ue_par_la_Terre
@@ -39,7 +51,7 @@ class world(ShowBase):
         self.light_Mngr=[]
         self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"lp_planet",False],
         [40,0,0,0,0.003,0,0.5,0.5,0.5,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Icy.egg"),(0.5,0,0)],"Ottilia",False],
-        [0,70,10,0,0.005,0,0.2,0.2,0.2,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(self.dir+"/Engine/sun1_atm.egg"),(0.01,0,0.05)],"Sun",True]] 
+        [0,70,10,0,0.005,0,0.2,0.2,0.2,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(self.dir+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True]] 
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource,radius] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean - radius: positive value -
         #if you want the hitbox to be correctly scaled, and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
         self.u_constant=6.67408*10**(-11) #just a quick reminder
@@ -54,6 +66,15 @@ class world(ShowBase):
         # see https://www.panda3d.org/manual/?title=Collision_Solids for further collision interaction informations
         base.graphicsEngine.openWindows()
         try:
+            # filters predefining
+            self.filters = CommonFilters(base.win, base.cam)
+            '''
+            self.filters.setBlurSharpen(amount=0) # just messing around
+            '''
+
+            self.filters.set_bloom(intensity=1,size="large")
+            
+
             for c in self.data: # loading and displaying the preloaded planets and bodies
                 for u in range(0,len(c[11]),2): # loading each sub-file
                     c[11][u].reparentTo(self.render)
@@ -76,6 +97,10 @@ class world(ShowBase):
                     self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
                     self.light_Mngr[len(self.light_Mngr)-1][1].setPos(c[0],c[1],c[2])
                     render.setLight(self.light_Mngr[len(self.light_Mngr)-1][1]) 
+                    # filters
+                    
+                    #self.filters.setVolumetricLighting(c[11][0],numsamples=32,density=5.0,decay=0.98,exposure=0.05) # that part is not ready
+
                     self.light_Mngr.append([AmbientLight(c[12]+"_self")])
                     self.light_Mngr[len(self.light_Mngr)-1][0].setColorTemperature(1000)
                     self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
@@ -103,48 +128,59 @@ class world(ShowBase):
             # play a random music
             self.current_playing=random.randint(0,len(self.sounds)-1)
             self.sounds[self.current_playing].play()
+            # task manager stuff comes here
+            self.taskMgr.add(self.mouse_check,'mousePositionTask')
             self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
             self.taskMgr.add(self.Sound_Mngr,'MusicHandle')
         except:
             sys.exit(":( something went wrong: 3d models could not be loaded")
         
-        
+        '''
         self.showsimpletext("All modules loaded, simulation running",(-1.42,0.95),(0.04,0.04),None,(1,1,1,True))
         self.showsimpletext("PyOS experimental build V0.4",(-1.5,0.90),(0.04,0.04),None,(1,1,1,True))
         self.showsimpletext("By l3alr0g",(-1.68,0.85),(0.04,0.04),None,(1,1,1,True))
-
+        '''
+        
         # key bindings
-        self.accept('escape',self.system_break)
+        self.accept('escape',self.toggle_pause)
+        self.accept('z',self.move_camera,[0])
+        self.accept('q',self.move_camera,[1])
+        self.accept('s',self.move_camera,[2])
+        self.accept('d',self.move_camera,[3])
     
     def showsimpletext(self,content,pos,scale,bg,fg): #shows a predefined, basic text on the screen (variable output only)
         return OnscreenText(text=content,pos=pos,scale=scale,bg=bg,fg=fg)
     
-    def placement_Mngr(self,task): #main game mechanics, frame updating function (kinda)
-        self.ctrav.traverse(render)
-        #self.queue = CollisionHandlerQueue() # update the collision queue
-        if self.queue.getNumEntries():
-            if self.debug:
-                print(self.queue.getNumEntries()) # debug
-            for c in range(0,len(self.queue.getEntries()),2):
-                # print(entry)#experimental, debugging purposes only
-                #print(entry.getInteriorPoint(entry.getIntoNodePath()))# we have to run a collision check for each couple
-                self.collision_log(self.queue.getEntries()[c])
-            # print "out"
-        # collision events are now under constant surveillance
-        acceleration=[]
-        for c in range(len(self.data)): #selects the analysed body
-            var=self.data[c]
-            Bdf=[0,0,0] #Bdf stands for 'bilan des forces' in french, it's the resulting acceleration
-            for d in self.data[0:c]+self.data[c+1:len(self.data)-1]: #selects the body which action on the analysed body we're studying...not sure about that english sentence though
-                S,M=[d[9],d[0],d[1],d[2]],[var[9],var[0],var[1],var[2]]
-                temp=self.dual_a(S,M)
-                Bdf=[Bdf[x]+temp[x] for x in range(3)] # list sum
-            # add the result to the global save list
-            acceleration.append(Bdf)
-        #update the bodies' position
-        self.speed_update(acceleration)
-        self.pos_update()
-        self.apply_update()
+    def placement_Mngr(self,task): # main game mechanics, frame updating function (kinda, all pausing and menu functions must be applied here
+        if self.state[0]=='running' or not task.time:
+            self.ctrav.traverse(render)
+            #self.queue = CollisionHandlerQueue() # update the collision queue
+            if self.queue.getNumEntries():
+                if self.debug:
+                    print(self.queue.getNumEntries()) # debug
+                for c in range(0,len(self.queue.getEntries()),2):
+                    # print(entry)#experimental, debugging purposes only
+                    #print(entry.getInteriorPoint(entry.getIntoNodePath()))# we have to run a collision check for each couple
+                    self.collision_log(self.queue.getEntries()[c])
+                # print "out"
+            # collision events are now under constant surveillance
+            acceleration=[]
+            for c in range(len(self.data)): #selects the analysed body
+                var=self.data[c]
+                Bdf=[0,0,0] #Bdf stands for 'bilan des forces' in french, it's the resulting acceleration
+                for d in self.data[0:c]+self.data[c+1:len(self.data)-1]: #selects the body which action on the analysed body we're studying...not sure about that english sentence though
+                    S,M=[d[9],d[0],d[1],d[2]],[var[9],var[0],var[1],var[2]]
+                    temp=self.dual_a(S,M)
+                    Bdf=[Bdf[x]+temp[x] for x in range(3)] # list sum
+                # add the result to the global save list
+                acceleration.append(Bdf)
+            #update the bodies' position
+            self.speed_update(acceleration)
+            self.pos_update()
+            self.apply_update()
+        elif self.state[0]=='paused':
+            self.handle_menu(self.iteration)
+            self.iteration+=1
         return task.cont
     
     def speed_update(self,a):
@@ -269,6 +305,32 @@ class world(ShowBase):
     def create_crater(self):
         return None
 
+    def toggle_pause(self):
+        temp=['paused','running']
+        self.state[0]=temp[self.state[0]==temp[0]] # switches between paused and running
+        self.iteration=0
+        if self.state[0]=='paused':
+            self.handle_menu(self.iteration)
+        else:
+            self.filters.del_blur_sharpen()
+            for u in self.menu_text:
+                u.hide()
+        return None
+    
+    def handle_menu(self,iteration):
+        if not iteration:
+            self.draw_menu()
+        else:
+            self.accept('escape',self.toggle_pause)
+            #put your mouse detection stuff here
+        return None
+    
+    def draw_menu(self):
+        self.filters.setBlurSharpen(amount=0)
+        for u in self.menu_text:
+                u.show()
+        return None
+    
     def show_credits(self):
         return "created by l3alr0g (at least this part, I'll do something better at the end)"
         
@@ -283,7 +345,11 @@ class world(ShowBase):
     def rotate_camera(self):
         return None
     
-    def move_camera(self):
+    def move_camera(self,tow): # tow stands for towards
+        print(tow)
+        return None
+    
+    def mouse_check(self,task): # returns the mouse's coordinates
         return None
     
     def answer_click(self):

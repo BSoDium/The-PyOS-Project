@@ -5,17 +5,20 @@ from pandac.PandaModules import *
 from panda3d.core import *
 from direct.showbase import DirectObject # event handling
 from direct.gui.OnscreenText import OnscreenText
+from direct.filter.CommonFilters import CommonFilters
+from direct.particles.ParticleEffect import ParticleEffect
 
 class core(ShowBase):
 	def __init__(self):
 		loadPrcFileData('', 'fullscreen true')
-		loadPrcFileData('','win-size 1600 900') #finalyyyyyyyyy got that f*cking fullscreen to woooork goddamit that was sooo f*cking hard to find
+		loadPrcFileData('','win-size 1920 1080') #finalyyyyyyyyy got that f*cking fullscreen to woooork goddamit that was sooo f*cking hard to find
 		ShowBase.__init__(self)
 		self.ast=self.loader.loadModel("asteroid_1.egg")
 		self.earth=self.loader.loadModel("generic_planet.egg")
 		self.isphere=self.loader.loadModel("InvertedSphere.egg")
 		self.tex=loader.loadCubeMap('cubemap_#.png')
-
+		
+		self.filters = CommonFilters(base.win, base.cam)
 		
 		base.graphicsEngine.openWindows()
 		self.ast.reparentTo(self.render)
@@ -34,6 +37,9 @@ class core(ShowBase):
 		self.plnp1=render.attachNewNode(self.plight1)
 		self.plnp1.setPos(10,10,0)
 		self.earth.setLight(self.plnp1)
+		self.filters.setVolumetricLighting(self.plnp1,numsamples=50,density=5.0,decay=0.98,exposure=0.05) # that part is not ready
+                    
+		self.p=ParticleEffect()
 
 		self.plight = PointLight('pointlight')
 		self.plight.setColorTemperature(7000) #color defined by temperature, pretty usefull in this case
@@ -57,6 +63,15 @@ class core(ShowBase):
 		#task manager stuff (further calculations will be here)
 		self.taskMgr.add(self.objectspin,"objectspintask")
 	
+	def loadParticleConfig(self, filename):
+        # Start of the code from steam.ptf
+		self.p.cleanup()
+        self.p = ParticleEffect()
+        self.p.loadConfig(Filename(filename))
+        # Sets particles to birth relative to the teapot, but to render at
+        # toplevel
+        self.p.start(self.t)
+        self.p.setPos(3.000, 0.000, 2.250)
 	def showsimpletext(self,content,pos,scale): #shows a predefined, basic text on the screen (variable output only)
 		return OnscreenText(text=content,pos=pos,scale=scale)
 	
@@ -69,6 +84,8 @@ class core(ShowBase):
 		self.temp_pos_update()
 		self.ast.setHpr(self.ast,1,0,0) #p stands for pitch, H for heading, and r for roll, this, in particular rotates the object by 1 degree
 		self.earth.setHpr(self.earth,-0.1,0,0)
+
+		self.loadParticleConfig('smoke.ptf')
 		return Task.cont  
 	
 	
