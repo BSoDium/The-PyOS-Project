@@ -19,23 +19,31 @@ if fullscreen:
     loadPrcFileData('','win-size '+str(user32.GetSystemMetrics(0))+' '+str(user32.GetSystemMetrics(1))) # fullscreen stuff for one monitor, for multi monitor setup try 78 79
 loadPrcFileData('','window-title PyOS')
 loadPrcFileData('','load-display pandagl')
-loadPrcFileData('','basic-shaders-only #f') # is that useful? 
+#loadPrcFileData('','basic-shaders-only #f') # is that useful? 
 loadPrcFileData("", "textures-power-2 none")
+
 
 class world(ShowBase):
     def __init__(self):
         try:
             ShowBase.__init__(self)
         except:
-            sys.exit(":( something went wrong: error while loading OpenGL")
+            sys.exit("something went wrong: error while loading OpenGL")
         #debug
         self.debug=False #REMEMBER TO TURN THIS OFF WHEN COMMITTING THIS TO GITHUB YOU GODDAM MORRON !!!
         #debug
         self.dir=Filename.fromOsSpecific(os.getcwd())
         self.timescale=10
         self.worldscale=0.1 # currently unused
+        
+        self.camera_delta=0.5 # camera delta displacement
+        self.sensitivity_x,self.sensitivity_y=20,20
+        self.hidden_mouse=True
+        wp = WindowProperties()
+        wp.setCursorHidden(self.hidden_mouse)
+        self.win.requestProperties(wp)
 
-        self.state=['paused'] # state of things
+        self.state=['paused','free'] # state of things: [simulation paused/running,camera following object/free]
         self.iteration=0 #iteraton for the menu to be drawn once
         # preparing the menu text list:
         self.menu_text=[]
@@ -57,6 +65,7 @@ class world(ShowBase):
         self.u_constant=6.67408*10**(-11) #just a quick reminder
         self.u_radius=5.25 #just what I said earlier 
         self.u_radius_margin=0.1 #a margin added to the generic radius as a safety feature (mountains and stuff, atmosphere)
+        self.setBackgroundColor(0,0,0,True)
         #currently unused
         self.isphere=self.loader.loadModel(self.dir+"/Engine/InvertedSphere.egg") #loading skybox structure
         self.tex=loader.loadCubeMap(self.dir+'/Engine/cubemap_#.png')   
@@ -76,6 +85,10 @@ class world(ShowBase):
             
 
             for c in self.data: # loading and displaying the preloaded planets and bodies
+                if c[13]:
+                    # VM filtering
+                    self.filters.setVolumetricLighting(c[11][u],numsamples=50,density=0.5,decay=0.95,exposure=0.035) # that part is not ready
+                
                 for u in range(0,len(c[11]),2): # loading each sub-file
                     c[11][u].reparentTo(self.render)
                     c[11][u].setScale(c[6],c[7],c[8])
@@ -97,9 +110,6 @@ class world(ShowBase):
                     self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
                     self.light_Mngr[len(self.light_Mngr)-1][1].setPos(c[0],c[1],c[2])
                     render.setLight(self.light_Mngr[len(self.light_Mngr)-1][1]) 
-                    # filters
-                    
-                    #self.filters.setVolumetricLighting(c[11][0],numsamples=32,density=5.0,decay=0.98,exposure=0.05) # that part is not ready
 
                     self.light_Mngr.append([AmbientLight(c[12]+"_self")])
                     self.light_Mngr[len(self.light_Mngr)-1][0].setColorTemperature(1000)
@@ -107,6 +117,7 @@ class world(ShowBase):
                     for u in range(0,len(c[11]),2):
                         c[11][u].setLight(self.light_Mngr[len(self.light_Mngr)-1][1])
                     print("lights: done")
+                
                 print("loaded new body, out: done")
             self.isphere.setTexGen(TextureStage.getDefault(), TexGenAttrib.MWorldCubeMap)  # *takes a deep breath* cubemap stuff !
             self.isphere.setTexProjector(TextureStage.getDefault(), render, self.isphere)
@@ -132,6 +143,7 @@ class world(ShowBase):
             self.taskMgr.add(self.mouse_check,'mousePositionTask')
             self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
             self.taskMgr.add(self.Sound_Mngr,'MusicHandle')
+            self.taskMgr.add(self.camera_update,'cameraPosition')
         except:
             sys.exit(":( something went wrong: 3d models could not be loaded")
         
@@ -143,11 +155,49 @@ class world(ShowBase):
         
         # key bindings
         self.accept('escape',self.toggle_pause)
-        self.accept('z',self.move_camera,[0])
-        self.accept('q',self.move_camera,[1])
-        self.accept('s',self.move_camera,[2])
-        self.accept('d',self.move_camera,[3])
-    
+        self.accept('z',self.move_camera,[0,True])
+        self.accept('q',self.move_camera,[1,True])
+        self.accept('s',self.move_camera,[2,True])
+        self.accept('d',self.move_camera,[3,True])
+        self.accept('a',self.move_camera,[4,True])
+        self.accept('e',self.move_camera,[5,True])
+        self.accept('z-up',self.move_camera,[0,False])
+        self.accept('q-up',self.move_camera,[1,False])
+        self.accept('s-up',self.move_camera,[2,False])
+        self.accept('d-up',self.move_camera,[3,False])
+        self.accept('a-up',self.move_camera,[4,False])
+        self.accept('e-up',self.move_camera,[5,False])
+        self.keymap=['z',0,'q',0,'s',0,'d',0,'a',0,'e',0]
+        
+        
+        self.disable_mouse()
+        
+        '''
+        # draw axis
+        coord=[(1,0,0),(0,1,0),(0,0,1)]
+        axis=[]
+        for c in range(3): 
+            axis.append(LineSegs())
+            axis[c].moveTo(0,0,0)
+            axis[c].drawTo(coord[c]);
+            axis[c].setThickness(3)
+            axis[c].setColor(tuple([coord[c][u]*255 for u in range(len(coord[c]))] +[True]))
+            NodePath(axis[c].create()).reparent_to(render)
+        '''
+        
+        # camera positionning -------
+        self.focus_point=[0,0,0] # point focused: can become a body's coordinates if the user tells the program to do so
+        self.zoom_distance=30 # distance to the focus point in common 3D units
+        self.cam_Hpr=[180,30,0] # phi, alpha, theta - aka yaw, pitch, roll
+        self.cam_Hpr=[self.cam_Hpr[n]*pi/180 for n in range(len(self.cam_Hpr))] # convert to rad
+        if self.state[1]=='free':
+            self.camera_pos=[0,0,0]
+            self.camera.setPos(tuple(self.camera_pos))
+        ''' # not finished yet
+        self.camera.setPos(self.focus_point[0]+cos(self.cam_Hpr[0])*self.zoom_distance,self.focus_point[1]+sin(self.cam_Hpr[0])*self.zoom_distance,self.focus_point[2]+sin(self.cam_Hpr[1])*self.zoom_distance)
+        self.camera.lookAt(self.focus_point[0],self.focus_point[1],self.focus_point[2])
+        '''
+
     def showsimpletext(self,content,pos,scale,bg,fg): #shows a predefined, basic text on the screen (variable output only)
         return OnscreenText(text=content,pos=pos,scale=scale,bg=bg,fg=fg)
     
@@ -210,7 +260,20 @@ class world(ShowBase):
                 self.light_Mngr[count][1].setPos(c[0],c[1],c[2])
                 count+=2 #we have to change the position of the pointlight, not the ambientlight
         return 0
-            
+    
+    def camera_update(self,task):
+        if self.state[1]=='free':
+            self.camera.setPos(tuple(self.camera_pos))
+        ''' # not finished yet
+        self.camera.setPos(self.focus_point[0]+cos(self.cam_Hpr[0])*self.zoom_distance,self.focus_point[1]+sin(self.cam_Hpr[0])*self.zoom_distance,self.focus_point[2]+sin(self.cam_Hpr[1])*self.zoom_distance)
+        self.camera.lookAt(self.focus_point[0],self.focus_point[1],self.focus_point[2])
+        '''
+        if self.keymap!=['z',0,'q',0,'s',0,'d',0]:
+            for x in range(1,len(self.keymap),2):
+                if self.keymap[x]:
+                    self.move_camera(int((x-1)/2),True) # why (x-1)/2 ? because we have to make the tow readable as a key number, like 0,1,2,3
+        return task.cont
+
     def dual_a(self,S,M): #S is the "static object", the one that applies the force to the "moving" object M
         O=[]  #This will be the list with the accelerations for an object 
         d=sqrt((S[1]-M[1])**2+(S[2]-M[2])**2+(S[3]-M[3])**2)
@@ -302,7 +365,7 @@ class world(ShowBase):
          
         return 0
 
-    def create_crater(self):
+    def create_crater(self): # see project for more informations
         return None
 
     def toggle_pause(self):
@@ -313,15 +376,29 @@ class world(ShowBase):
             self.handle_menu(self.iteration)
         else:
             self.filters.del_blur_sharpen()
+            # make the mouse invisible
+            self.hidden_mouse=True
+            wp = WindowProperties()
+            wp.setCursorHidden(self.hidden_mouse)
+            # set the mouse pos to 0 
+            self.center_mouse()
+
+            self.win.requestProperties(wp)
             for u in self.menu_text:
                 u.hide()
         return None
     
     def handle_menu(self,iteration):
         if not iteration:
-            self.draw_menu()
-        else:
             self.accept('escape',self.toggle_pause)
+            self.draw_menu()
+            # make the mouse visible
+            self.hidden_mouse=False
+            wp = WindowProperties()
+            wp.setCursorHidden(self.hidden_mouse)
+            self.win.requestProperties(wp)
+        else:
+            print(iteration)
             #put your mouse detection stuff here
         return None
     
@@ -343,20 +420,57 @@ class world(ShowBase):
         return None
     
     def rotate_camera(self):
+        self.camera.setHpr(tuple(self.cam_Hpr))
         return None
     
-    def move_camera(self,tow): # tow stands for towards
-        print(tow)
+    def move_camera(self,tow,pressed): # tow stands for towards, pressed is a boolean which indicates the state of the key
+        if pressed:
+            self.keymap[2*tow+1]=1
+        else:
+            self.keymap[2*tow+1]=0
+        
+        if self.keymap[2*tow+1]:
+            phi,alpha,theta,delta=self.cam_Hpr[0]*pi/180,self.cam_Hpr[1]*pi/180,self.cam_Hpr[2]*pi/180,self.camera_delta
+            if self.keymap[2*tow]=='q':
+                if self.state[1]=='free':
+                    self.camera_pos=[self.camera_pos[0]-cos(phi)*delta,self.camera_pos[1]-sin(phi)*delta,self.camera_pos[2]-sin(theta)*delta] # moving the camera
+                else:
+                    print('this mode is not ready')
+            if self.keymap[2*tow]=='z':
+                if self.state[1]=='free':
+                    self.camera_pos=[self.camera_pos[0]-sin(phi)*cos(theta)*delta,self.camera_pos[1]+cos(phi)*cos(theta)*delta,self.camera_pos[2]+sin(alpha)*delta]
+            if self.keymap[2*tow]=='s':
+                if self.state[1]=='free':
+                    self.camera_pos=[self.camera_pos[0]+sin(phi)*cos(theta)*delta,self.camera_pos[1]-cos(phi)*cos(theta)*delta,self.camera_pos[2]-sin(alpha)*delta]
+            if self.keymap[2*tow]=='d':
+                if self.state[1]=='free':
+                    self.camera_pos=[self.camera_pos[0]+cos(phi)*delta,self.camera_pos[1]+sin(phi)*cos(alpha)*delta,self.camera_pos[2]+sin(alpha)*delta]
         return None
     
-    def mouse_check(self,task): # returns the mouse's coordinates
-        return None
+    def mouse_check(self,task): # gets the mouse's coordinates
+        mwn = self.mouseWatcherNode
+        if mwn.hasMouse():
+            x,y=mwn.getMouseX(),mwn.getMouseY()
+            #print(x,y) # debug
+            # focus_point coordinates modifier code here:
+            if self.state==['running','free']:
+                self.cam_Hpr[0]-=x*self.sensitivity_x # the - fixes a bug I can't solve
+                self.cam_Hpr[1]+=y*self.sensitivity_y
+                self.rotate_camera()
+                self.center_mouse()
+            #print(self.cam_Hpr) # debug
+        return task.cont
+
+    def center_mouse(self):           
+        self.win.movePointer(0,
+          int(self.win.getProperties().getXSize() / 2),
+          int(self.win.getProperties().getYSize() / 2)) # move mouse back to center --> careful ! this makes the delta calculation code buggy
     
     def answer_click(self):
         return None
     
     def easter_egg(self):
-        return "please be patient, hens are working on it"
+        return "please be patient, our hens are working on it"
     
 
 launch=world()
