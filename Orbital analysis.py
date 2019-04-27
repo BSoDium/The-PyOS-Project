@@ -24,7 +24,7 @@ It's the gravitationally curved trajectory of an object
 The major part of orbits are supposed circulars, but to fit with reality let's consider them elliptics. (After we will add functions to make them 
 parabolic or hyperbolic).
 We take the ecuador of the created object as the plane reference.
-There is severals types of orbits : Suborbitals trajectories and Escape trajectories.
+There are several types of orbits : Suborbitals trajectories and Escape trajectories.
 To define our orbits we will need some parameters as : Eccentricity, Half-major axis, tilt, longitude of the ascending node, perry argument, 
 periapsis and the position.'''
 

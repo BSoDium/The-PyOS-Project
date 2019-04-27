@@ -20,8 +20,12 @@ if fullscreen:
 loadPrcFileData('','window-title PyOS')
 loadPrcFileData('','load-display pandagl')
 #loadPrcFileData('','basic-shaders-only #f') # is that useful? 
-loadPrcFileData("", "textures-power-2 none")
+loadPrcFileData('', 'textures-power-2 none')
+# Antialiasing
+loadPrcFileData('','framebuffer-multisample 1')
+loadPrcFileData('','multisamples 2')
 
+SKYBOX='sky'
 
 class world(ShowBase):
     def __init__(self):
@@ -33,18 +37,20 @@ class world(ShowBase):
         self.debug=False #REMEMBER TO TURN THIS OFF WHEN COMMITTING THIS TO GITHUB YOU GODDAM MORRON !!!
         #debug
         self.dir=Filename.fromOsSpecific(os.getcwd())
-        self.timescale=10
+        self.timescale=5
         self.worldscale=0.1 # currently unused
         
         self.camera_delta=0.5 # camera delta displacement
         self.sensitivity_x,self.sensitivity_y=20,20
+        self.watched=None # watched object (object focused by the cursor)
         self.hidden_mouse=True
         wp = WindowProperties()
         wp.setCursorHidden(self.hidden_mouse)
         self.win.requestProperties(wp)
 
-        self.state=['paused','free'] # state of things: [simulation paused/running,camera following object/free]
-        self.iteration=0 #iteraton for the menu to be drawn once
+        self.state=['paused','free',None] # state of things: [simulation paused/running,camera following object/free,followed object/None]
+        print('free mode on')
+        self.iteration=0 #iteration for the menu to be drawn once
         # preparing the menu text list:
         self.menu_text=[]
         self.menu_text.append(self.showsimpletext('The PyOS project V0.5',(0,0.4),(0.07,0.07),None,(1,1,1,True)))
@@ -57,18 +63,30 @@ class world(ShowBase):
         self.sounds=[self.loader.loadSfx(self.dir+"/Sound/001.mp3"),self.loader.loadSfx(self.dir+"/Sound/002.mp3"),self.loader.loadSfx(self.dir+"/Sound/003.mp3"),self.loader.loadSfx(self.dir+"/Sound/004.mp3"),self.loader.loadSfx(self.dir+"/Sound/005.mp3")] #buggy
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
-        self.data=[[0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"lp_planet",False],
-        [40,0,0,0,0.003,0,0.5,0.5,0.5,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Icy.egg"),(0.5,0,0)],"Ottilia",False],
-        [0,70,10,0,0.005,0,0.2,0.2,0.2,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False],[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(self.dir+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True]] 
-        # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource,radius] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean - radius: positive value -
+
+        self.data=[
+        [0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"lp_planet",False]
+        ,[40,0,0,0,0.003,0,0.9,0.9,0.9,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia",False]
+        ,[0,70,10,0,0.005,0,0.2,0.2,0.2,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False]
+        ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(self.dir+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True]
+        ,[-100,50,70,0,0,0.002,1,1,1,1000.00,True,[self.loader.loadModel(self.dir+"/Engine/Earth2.egg"),(-0.1,0,0),self.loader.loadModel(self.dir+"/Engine/Earth2_atm.egg"),(-0.15,0,0)],"Julius_planet",False]
+        # insert your 3d models here, following the syntax
+        ] 
+        # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean -
         #if you want the hitbox to be correctly scaled, and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
+        
         self.u_constant=6.67408*10**(-11) #just a quick reminder
         self.u_radius=5.25 #just what I said earlier 
-        self.u_radius_margin=0.1 #a margin added to the generic radius as a safety feature (mountains and stuff, atmosphere)
+        self.u_radius_margin=0.1 #a margin added to the generic radius as a safety feature (mountains and stuff, atmosphere) 
         self.setBackgroundColor(0,0,0,True)
-        #currently unused
-        self.isphere=self.loader.loadModel(self.dir+"/Engine/InvertedSphere.egg") #loading skybox structure
-        self.tex=loader.loadCubeMap(self.dir+'/Engine/cubemap_#.png')   
+        
+
+        # non-body type structures loading
+        if SKYBOX=='sky':
+            self.isphere=self.loader.loadModel(self.dir+"/Engine/InvertedSphere.egg") #loading skybox structure
+            self.tex=loader.loadCubeMap(self.dir+'/Engine/cubemap_#.png')  
+        elif SKYBOX=='arena':
+            self.box=self.loader.loadModel(self.dir+"/Engine/arena.egg") 
 
         self.orbit_lines=[] #under developement
         
@@ -80,14 +98,16 @@ class world(ShowBase):
             '''
             self.filters.setBlurSharpen(amount=0) # just messing around
             '''
-
-            self.filters.set_bloom(intensity=1,size="large")
+            if not self.debug:
+                self.filters.set_gamma_adjust(1.0) # can be usefull
+                self.filters.set_bloom(intensity=1,size="large")
+                render.setAntialias(AntialiasAttrib.MAuto)
             
 
             for c in self.data: # loading and displaying the preloaded planets and bodies
-                if c[13]:
+                if c[13] and not self.debug:
                     # VM filtering
-                    self.filters.setVolumetricLighting(c[11][u],numsamples=50,density=0.5,decay=0.95,exposure=0.035) # that part is not ready
+                    self.filters.setVolumetricLighting(c[11][u],numsamples=50,density=0.5,decay=0.95,exposure=0.035) 
                 
                 for u in range(0,len(c[11]),2): # loading each sub-file
                     c[11][u].reparentTo(self.render)
@@ -101,6 +121,7 @@ class world(ShowBase):
                 # asteroids and irregular shapes must be slightly bigger than their hitbox in order to avoid visual glitches
                 self.collision_solids[len(self.collision_solids)-1][1].node().addSolid(self.collision_solids[len(self.collision_solids)-1][0]) #I am definitely not explaining that
                 if self.debug:
+                    loadPrcFileData('', 'show-frame-rate-meter true')
                     self.collision_solids[len(self.collision_solids)-1][1].show() # debugging purposes only
                 
                 print("collision: ok")
@@ -119,14 +140,19 @@ class world(ShowBase):
                     print("lights: done")
                 
                 print("loaded new body, out: done")
-            self.isphere.setTexGen(TextureStage.getDefault(), TexGenAttrib.MWorldCubeMap)  # *takes a deep breath* cubemap stuff !
-            self.isphere.setTexProjector(TextureStage.getDefault(), render, self.isphere)
-            self.isphere.setTexPos(TextureStage.getDefault(), 0, 0, 0)
-            self.isphere.setTexScale(TextureStage.getDefault(), .5) # that's a thing...
-            self.isphere.setTexture(self.tex)# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
-            self.isphere.setLightOff()
-            self.isphere.setScale(10000) #hope this is enough
-            self.isphere.reparentTo(self.render)
+            if SKYBOX=='sky':
+                self.isphere.setTexGen(TextureStage.getDefault(), TexGenAttrib.MWorldCubeMap)  # *takes a deep breath* cubemap stuff !
+                self.isphere.setTexProjector(TextureStage.getDefault(), render, self.isphere)
+                self.isphere.setTexPos(TextureStage.getDefault(), 0, 0, 0)
+                self.isphere.setTexScale(TextureStage.getDefault(), .5) # that's a thing...
+                self.isphere.setTexture(self.tex)# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
+                self.isphere.setLightOff()
+                self.isphere.setScale(10000) #hope this is enough
+                self.isphere.reparentTo(self.render)
+            elif SKYBOX=='arena':
+                self.box.setPos(0,0,0)
+                self.box.setScale(10000)
+                self.box.reparentTo(self.render)
             # collision traverser and other collision stuff # that's super important, and super tricky to explain so just check the wiki
             self.ctrav = CollisionTraverser()
             self.queue = CollisionHandlerQueue()
@@ -155,6 +181,7 @@ class world(ShowBase):
         
         # key bindings
         self.accept('escape',self.toggle_pause)
+        self.accept('mouse1',self.handle_select,[True])
         self.accept('z',self.move_camera,[0,True])
         self.accept('q',self.move_camera,[1,True])
         self.accept('s',self.move_camera,[2,True])
@@ -167,36 +194,51 @@ class world(ShowBase):
         self.accept('d-up',self.move_camera,[3,False])
         self.accept('a-up',self.move_camera,[4,False])
         self.accept('e-up',self.move_camera,[5,False])
-        self.keymap=['z',0,'q',0,'s',0,'d',0,'a',0,'e',0]
+        self.keymap=['z',0,'q',0,'s',0,'d',0,'a',0,'e',0,'mouse1',0]
         
         
         self.disable_mouse()
         
-        '''
-        # draw axis
-        coord=[(1,0,0),(0,1,0),(0,0,1)]
-        axis=[]
-        for c in range(3): 
-            axis.append(LineSegs())
-            axis[c].moveTo(0,0,0)
-            axis[c].drawTo(coord[c]);
-            axis[c].setThickness(3)
-            axis[c].setColor(tuple([coord[c][u]*255 for u in range(len(coord[c]))] +[True]))
-            NodePath(axis[c].create()).reparent_to(render)
-        '''
-        
+        if self.debug: 
+            # draw axis
+            coord=[(1,0,0),(0,1,0),(0,0,1)]
+            axis=[]
+            for c in range(3): 
+                axis.append(LineSegs())
+                axis[c].moveTo(0,0,0)
+                axis[c].drawTo(coord[c])
+                axis[c].setThickness(3)
+                axis[c].setColor(tuple([coord[c][u]*255 for u in range(len(coord[c]))] +[True]))
+                NodePath(axis[c].create()).reparent_to(render)
+
         # camera positionning -------
         self.focus_point=[0,0,0] # point focused: can become a body's coordinates if the user tells the program to do so
-        self.zoom_distance=30 # distance to the focus point in common 3D units
-        self.cam_Hpr=[180,30,0] # phi, alpha, theta - aka yaw, pitch, roll
+        self.zoom_distance=30 # distance to the focus point in common 3D units (can be modified by scrolling)
+        self.cam_Hpr=[0,0,0] # phi, alpha, theta - aka yaw, pitch, roll
         self.cam_Hpr=[self.cam_Hpr[n]*pi/180 for n in range(len(self.cam_Hpr))] # convert to rad
+        phi,alpha,theta,zoom,object=self.cam_Hpr[0]*pi/180,self.cam_Hpr[1]*pi/180,self.cam_Hpr[2]*pi/180,self.zoom_distance,self.state[2] # temporary vars
         if self.state[1]=='free':
             self.camera_pos=[0,0,0]
             self.camera.setPos(tuple(self.camera_pos))
-        ''' # not finished yet
-        self.camera.setPos(self.focus_point[0]+cos(self.cam_Hpr[0])*self.zoom_distance,self.focus_point[1]+sin(self.cam_Hpr[0])*self.zoom_distance,self.focus_point[2]+sin(self.cam_Hpr[1])*self.zoom_distance)
-        self.camera.lookAt(self.focus_point[0],self.focus_point[1],self.focus_point[2])
-        '''
+        elif self.state[1]=='linked':
+            # find the object (self.state[2]) in the self.data list
+            list_pos=[self.data[n][11][0] for n in range(len(self.data))].index(object.getParent())
+            self.focus_point=self.data[list_pos][0:3] # take the focused object's coordinates
+            self.camera_pos=[self.focus_point[0]+sin(phi)*cos(-alpha)*zoom,self.focus_point[1]-cos(phi)*cos(-alpha)*zoom,self.focus_point[2]+sin(-alpha)*zoom] #keep it up to date so that it's not hard to find whend switching modes
+            self.camera.setPos(tuple(self.camera_pos))
+            self.camera.setHpr(self.cam_Hpr)
+
+        # cursor
+        self.cursor=self.showsimpletext('.',(0,0),(0.08,0.08),None,(1,1,1,True)) # yeah, you can laugh, but this still works so I don't care
+        self.pointerNode=CollisionNode('cursor')
+        self.pointerNP=camera.attachNewNode(self.pointerNode)
+        self.pointerNode.setFromCollideMask(BitMask32.bit(1)) # separate collisions (in order to avoid mistakes during physical calculations)
+        self.cursor_ray=CollisionRay() # create the control ray
+        self.pointerNode.addSolid(self.cursor_ray)
+        self.ctrav.add_collider(self.pointerNP,self.queue)
+
+        
+        return None
 
     def showsimpletext(self,content,pos,scale,bg,fg): #shows a predefined, basic text on the screen (variable output only)
         return OnscreenText(text=content,pos=pos,scale=scale,bg=bg,fg=fg)
@@ -208,11 +250,32 @@ class world(ShowBase):
             if self.queue.getNumEntries():
                 if self.debug:
                     print(self.queue.getNumEntries()) # debug
-                for c in range(0,len(self.queue.getEntries()),2):
-                    # print(entry)#experimental, debugging purposes only
-                    #print(entry.getInteriorPoint(entry.getIntoNodePath()))# we have to run a collision check for each couple
-                    self.collision_log(self.queue.getEntries()[c])
+                # now we have to create a temp list containing only the Entries that refer to collisions between bodies,
+                # not cursor-type collisions:
+                temp1,temp2=[],[]
+                for count in range(len(self.queue.getEntries())):
+                    if self.queue.getEntries()[count].getFromNodePath()!=self.pointerNP: temp1.append(self.queue.getEntries()[count])
+                    else: temp2.append(self.queue.getEntries()[count])
+                # the temp1 and temp2 lists have been created 
+                # run the check for the body-with-body collisions
+                for c in range(0,len(temp1),2): 
+                    entry=temp1[c]
+                    self.collision_log(entry)
+                # run the check for the cursor-with-body collisions
+                for c in range(len(temp2)):
+                    entry=temp2[c]
+                    self.watched=entry.getIntoNodePath()
                 # print "out"
+
+                # update the collider list
+                self.ctrav.clear_colliders()
+                self.queue = CollisionHandlerQueue()
+                for n in self.collision_solids:
+                    self.ctrav.add_collider(n[1],self.queue)
+                self.ctrav.add_collider(self.pointerNP,self.queue) # add the cursor ray again
+            else:
+                self.watched=None
+                
             # collision events are now under constant surveillance
             acceleration=[]
             for c in range(len(self.data)): #selects the analysed body
@@ -262,12 +325,26 @@ class world(ShowBase):
         return 0
     
     def camera_update(self,task):
+        phi,alpha,theta,zoom,object=self.cam_Hpr[0]*pi/180,self.cam_Hpr[1]*pi/180,self.cam_Hpr[2]*pi/180,self.zoom_distance,self.state[2]
         if self.state[1]=='free':
             self.camera.setPos(tuple(self.camera_pos))
+        elif self.state[1]=='linked':
+            # find the object (self.state[2]) in the self.data list
+            list_pos=[self.data[n][11][0] for n in range(len(self.data))].index(object.getParent())
+            self.focus_point=self.data[list_pos][0:3] # take the focused object's coordinates
+            self.camera_pos=[self.focus_point[0]+sin(phi)*cos(-alpha)*zoom,self.focus_point[1]-cos(phi)*cos(-alpha)*zoom,self.focus_point[2]+sin(-alpha)*zoom]
+            self.camera.setPos(tuple(self.camera_pos))
+            self.camera.setHpr(tuple(self.cam_Hpr))
         ''' # not finished yet
         self.camera.setPos(self.focus_point[0]+cos(self.cam_Hpr[0])*self.zoom_distance,self.focus_point[1]+sin(self.cam_Hpr[0])*self.zoom_distance,self.focus_point[2]+sin(self.cam_Hpr[1])*self.zoom_distance)
         self.camera.lookAt(self.focus_point[0],self.focus_point[1],self.focus_point[2])
         '''
+        # collision cursor stuff goes here:
+        self.cursor_ray.setFromLens(self.camNode,0,0) 
+        # relatively to the camera, the cursor position will always be 0,0 which is the position of the 
+        # white point on the screen
+
+
         if self.keymap!=['z',0,'q',0,'s',0,'d',0]:
             for x in range(1,len(self.keymap),2):
                 if self.keymap[x]:
@@ -291,43 +368,44 @@ class world(ShowBase):
         f_radius=(self.data[from_pos][6]+self.data[from_pos][7]+self.data[from_pos][8])*self.u_radius/3
         i_radius=(self.data[into_pos][6]+self.data[into_pos][7]+self.data[into_pos][8])*self.u_radius/3
         if max(f_radius,i_radius)==f_radius:
+            inverted=True
             into_pos,from_pos=from_pos,into_pos
+        else:
+            inverted=False # currently unused
         # those are the two positions of the nodepaths, now we need to know which one is bigger, in order to obtain the fusion effect
         # from_pos is the smaller body, into_pos is the bigger one
-        self.collision_gfx(self.momentum_transfer(from_pos,into_pos,entry),f_radius,i_radius)
+        self.collision_gfx(self.momentum_transfer(from_pos,into_pos,entry,inverted),f_radius,i_radius)
         return 0
     
-    def momentum_transfer(self,f_pos,i_pos,entry):
+    def momentum_transfer(self,f_pos,i_pos,entry,inverted):
         if self.debug:
             print("colliding") # debug, makes the game laggy
-        #that part is completely fucked up
-        interior = entry.getInteriorPoint(entry.getIntoNodePath())
+        interior = entry.getInteriorPoint(entry.getIntoNodePath()) # default
         surface = entry.getSurfacePoint(entry.getIntoNodePath())
+        print((interior - surface).length())
         if (interior - surface).length() >= 2*(self.data[f_pos][6]+self.data[f_pos][7]+self.data[f_pos][8])*self.u_radius/3:
             #Here's Johny
+            if self.state[2]==self.collision_solids[f_pos][1]:
+                self.state[1]='free'
+                self.state[2]=None
+            self.ctrav.remove_collider(self.collision_solids[f_pos][1])
             for c in range(0,len(self.data[f_pos][11]),2):
-                self.ctrav.remove_collider(self.collision_solids[f_pos][1])
-                #self.collision_solids[f_pos][1].node().removeSolid()
-                #self.collision_solids[f_pos][1]=None
                 self.data[f_pos][11][c].removeNode()
                 #self.data[f_pos][11][c]=None
             
             self.data[i_pos][6],self.data[i_pos][7],self.data[i_pos][8]=self.data[i_pos][6]*(self.data[i_pos][9]+self.data[f_pos][9])/self.data[i_pos][9],self.data[i_pos][7]*(self.data[i_pos][9]+self.data[f_pos][9])/self.data[i_pos][9],self.data[i_pos][8]*(self.data[i_pos][9]+self.data[f_pos][9])/self.data[i_pos][9]
             self.data[i_pos][9]+=self.data[f_pos][9]
             # scale updating ()
+            ''' temporarly removed
             for c in range(0,len(self.data[i_pos][11]),2):
                 self.data[i_pos][11][c].setScale(self.data[i_pos][6],self.data[i_pos][7],self.data[i_pos][8])
+            ''' 
             # deleting the destroyed planet's data, it is not fully functionnal as the other models remain intact
             self.data=self.data[:f_pos]+self.data[f_pos+1:len(self.data)]
             self.collision_solids=self.collision_solids[:f_pos]+self.collision_solids[f_pos+1:len(self.collision_solids)]
             # just a quick test
-            self.ctrav.clear_colliders()
-            self.queue = CollisionHandlerQueue()
-            for n in self.collision_solids:
-                self.ctrav.add_collider(n[1],self.queue)
             if self.debug:
                 self.ctrav.showCollisions(render) 
-            # update the queue (simple test actually) -edit- it works
             if self.debug:
                 print("planet destroyed")
         return interior,surface # used for the collision gfx calculations
@@ -350,7 +428,7 @@ class world(ShowBase):
             self.sounds[self.current_playing].play()
         return task.cont
 
-    def collision_gfx(self,points,Rf,Ri):
+    def collision_gfx(self,points,Rf,Ri): # collision animation calculations
         # section size calculation
         # we know the depth of penetration (no silly jokes please), which allows us, knowing the radius of each body, 
         # to calculate the radius of the section (I've got no idea how to say that in correct english)
@@ -398,7 +476,7 @@ class world(ShowBase):
             wp.setCursorHidden(self.hidden_mouse)
             self.win.requestProperties(wp)
         else:
-            print(iteration)
+            a=1 # indentation (temporary)
             #put your mouse detection stuff here
         return None
     
@@ -426,25 +504,30 @@ class world(ShowBase):
     def move_camera(self,tow,pressed): # tow stands for towards, pressed is a boolean which indicates the state of the key
         if pressed:
             self.keymap[2*tow+1]=1
+            self.state[1]='free'
+            #print('free mode on')
+            self.state[2]=None
         else:
             self.keymap[2*tow+1]=0
         
         if self.keymap[2*tow+1]:
-            phi,alpha,theta,delta=self.cam_Hpr[0]*pi/180,self.cam_Hpr[1]*pi/180,self.cam_Hpr[2]*pi/180,self.camera_delta
+            phi,alpha,theta,delta,zoom=self.cam_Hpr[0]*pi/180,self.cam_Hpr[1]*pi/180,self.cam_Hpr[2]*pi/180,self.camera_delta,self.zoom_distance
             if self.keymap[2*tow]=='q':
                 if self.state[1]=='free':
-                    self.camera_pos=[self.camera_pos[0]-cos(phi)*delta,self.camera_pos[1]-sin(phi)*delta,self.camera_pos[2]-sin(theta)*delta] # moving the camera
-                else:
-                    print('this mode is not ready')
+                    self.camera_pos=[self.camera_pos[0]-cos(phi)*cos(theta)*delta,self.camera_pos[1]-sin(phi)*cos(theta)*delta,self.camera_pos[2]+sin(theta)*delta] # moving the camera
             if self.keymap[2*tow]=='z':
                 if self.state[1]=='free':
-                    self.camera_pos=[self.camera_pos[0]-sin(phi)*cos(theta)*delta,self.camera_pos[1]+cos(phi)*cos(theta)*delta,self.camera_pos[2]+sin(alpha)*delta]
+                    self.camera_pos=[self.camera_pos[0]-sin(phi)*cos(alpha)*delta,self.camera_pos[1]+cos(phi)*cos(alpha)*delta,self.camera_pos[2]+sin(alpha)*delta]
             if self.keymap[2*tow]=='s':
                 if self.state[1]=='free':
-                    self.camera_pos=[self.camera_pos[0]+sin(phi)*cos(theta)*delta,self.camera_pos[1]-cos(phi)*cos(theta)*delta,self.camera_pos[2]-sin(alpha)*delta]
+                    self.camera_pos=[self.camera_pos[0]+sin(phi)*cos(alpha)*delta,self.camera_pos[1]-cos(phi)*cos(alpha)*delta,self.camera_pos[2]-sin(alpha)*delta]
             if self.keymap[2*tow]=='d':
                 if self.state[1]=='free':
-                    self.camera_pos=[self.camera_pos[0]+cos(phi)*delta,self.camera_pos[1]+sin(phi)*cos(alpha)*delta,self.camera_pos[2]+sin(alpha)*delta]
+                    self.camera_pos=[self.camera_pos[0]+cos(phi)*cos(theta)*delta,self.camera_pos[1]+sin(phi)*cos(theta)*delta,self.camera_pos[2]-sin(theta)*delta]
+            if self.keymap[2*tow]=='a':
+                self.cam_Hpr[2]-=1
+            if self.keymap[2*tow]=='e':
+                self.cam_Hpr[2]+=1
         return None
     
     def mouse_check(self,task): # gets the mouse's coordinates
@@ -453,20 +536,33 @@ class world(ShowBase):
             x,y=mwn.getMouseX(),mwn.getMouseY()
             #print(x,y) # debug
             # focus_point coordinates modifier code here:
-            if self.state==['running','free']:
+            if self.state==['running','free',None]:
                 self.cam_Hpr[0]-=x*self.sensitivity_x # the - fixes a bug I can't solve
-                self.cam_Hpr[1]+=y*self.sensitivity_y
+                self.cam_Hpr[1]+=y*self.sensitivity_y # those formulas do not work when theta (self.cam_Hpr[2]) changes 
                 self.rotate_camera()
                 self.center_mouse()
-            #print(self.cam_Hpr) # debug
+            elif self.state[0]=='running' and self.state[1]=='linked':
+                self.cam_Hpr[0]-=x*self.sensitivity_x
+                self.cam_Hpr[1]-=y*self.sensitivity_y
+                self.rotate_camera()
+                self.center_mouse()
+            '''
+            if self.debug:
+                print(self.cam_Hpr,self.camera_pos) # debug
+        '''
         return task.cont
 
-    def center_mouse(self):           
+    def center_mouse(self):
         self.win.movePointer(0,
           int(self.win.getProperties().getXSize() / 2),
           int(self.win.getProperties().getYSize() / 2)) # move mouse back to center --> careful ! this makes the delta calculation code buggy
     
-    def answer_click(self):
+    def handle_select(self,is_clicked): 
+        if is_clicked and self.watched!=None:
+            self.state[1]='linked' # toggle following mode
+            self.state[2]=self.watched
+            print('linked mode on, focusing: ',self.watched)
+        #else: # do nothing actually
         return None
     
     def easter_egg(self):
