@@ -203,3 +203,16 @@ def tilt(L):  # L is an array
 - F
 - initial orbital kinetic torque
 - tilt'''
+
+
+#Here's the function that calculates the resulting speed of a planet born from a collision between two others,
+#This apply when the two colliding planets merge into a single one
+
+def choc(A,B):
+    m=A[0]+B[0]
+    px=A[0]*A[3]+B[0]*B[3]
+    py=A[0]*A[4]+B[0]*B[4]
+    pz=A[0]*A[5]+B[0]*B[5]
+    return px/m and py/m and pz/m
+    
+
