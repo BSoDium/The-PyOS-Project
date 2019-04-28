@@ -10,12 +10,12 @@ try:
 except:
     sys.exit("please install library panda3d: pip install panda")
 import ctypes
-
+ 
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware() #windows cross platform compatibility, fixes the getsystemmetrics bug
 fullscreen=True
 if fullscreen:
-    loadPrcFileData('', 'fullscreen true')
+    loadPrcFileData('', 'fullscreen true') 
     loadPrcFileData('','win-size '+str(user32.GetSystemMetrics(0))+' '+str(user32.GetSystemMetrics(1))) # fullscreen stuff for one monitor, for multi monitor setup try 78 79
 loadPrcFileData('','window-title PyOS')
 loadPrcFileData('','load-display pandagl')
@@ -23,9 +23,41 @@ loadPrcFileData('','load-display pandagl')
 loadPrcFileData('', 'textures-power-2 none')
 # Antialiasing
 loadPrcFileData('','framebuffer-multisample 1')
-loadPrcFileData('','multisamples 2')
+loadPrcFileData('','multisamples 2') 
 
 SKYBOX='sky'
+
+class body:
+    def __init__(self):
+        self.position=[0,0,0]
+        self.speed=[0,0,0]
+        self.scale=[1,1,1]
+        self.mass=1
+        self.is_static=True
+        self.filelist=[]
+        self.id=''
+        self.is_lightSource=False
+    
+    def fill_entries(self,list):
+        try:
+            test=list[13] # test the lenght of the list
+        except:
+            sys.exit('incorrect data entry, please modify your bodies data list')
+        self.position=list[0:3]
+        self.speed=list[3:6]
+        self.scale=list[6:9]
+        self.mass=list[9]
+        self.is_static=list[10]
+        self.filelist=list[11]
+        self.id=list[12]
+        self.is_lightSource=list[13]
+    
+    def delete_body(self):
+        return NotImplemented
+    
+    def delete_hitbox(self):
+        return NotImplemented
+
 
 class world(ShowBase):
     def __init__(self):
@@ -33,6 +65,8 @@ class world(ShowBase):
             ShowBase.__init__(self)
         except:
             sys.exit("something went wrong: error while loading OpenGL")
+        
+        # ------------------------------- Begin of parameter variables (pretty messy actually) ------------------------------------
         #debug
         self.debug=False #REMEMBER TO TURN THIS OFF WHEN COMMITTING THIS TO GITHUB YOU GODDAM MORRON !!!
         #debug
@@ -43,27 +77,37 @@ class world(ShowBase):
         self.camera_delta=0.5 # camera delta displacement
         self.sensitivity_x,self.sensitivity_y=20,20
         self.watched=None # watched object (object focused by the cursor)
+        
+        self.state=['paused','free',None] # state of things: [simulation paused/running,camera following object/free,followed object/None]
+        print('free mode on')
+        self.iteration=0 #iteration for the menu to be drawn once
+        self.collision_status=False # Keep this on False, that's definitely not a setting # currently unused
+
+        self.u_constant=6.67408*10**(-11) #just a quick reminder
+        self.u_radius=5.25 #just what I said earlier 
+        self.u_radius_margin=0.1 #a margin added to the generic radius as a safety feature (mountains and stuff, atmosphere) 
+        
+        # ------------------------------- End of parameter variables (sry for the mess) --------------------------------------------
+
+        # Mouse parameters 
         self.hidden_mouse=True
         wp = WindowProperties()
         wp.setCursorHidden(self.hidden_mouse)
         self.win.requestProperties(wp)
 
-        self.state=['paused','free',None] # state of things: [simulation paused/running,camera following object/free,followed object/None]
-        print('free mode on')
-        self.iteration=0 #iteration for the menu to be drawn once
         # preparing the menu text list:
         self.menu_text=[]
         self.menu_text.append(self.showsimpletext('The PyOS project V0.5',(0,0.4),(0.07,0.07),None,(1,1,1,True)))
         self.menu_text.append(self.showsimpletext('Resume',(0,0.3),(0.06,0.06),None,(1,1,1,True)))
         self.menu_text.append(self.showsimpletext('Quit',(0,0.2),(0.06,0.06),None,(1,1,1,True)))
 
-        self.collision_status=False # Keep this on False, that's definitely not a setting # currently unused
         # btw I found something about energy transmition through thermal radiation. I think it uses some Boltzmann formula stuff. Link here:
         # https://fr.wikibooks.org/wiki/Plan%C3%A9tologie/La_temp%C3%A9rature_de_surface_des_plan%C3%A8tes#Puissance_re%C3%A7ue_par_la_Terre
+
+        # Defining important data lists
         self.sounds=[self.loader.loadSfx(self.dir+"/Sound/001.mp3"),self.loader.loadSfx(self.dir+"/Sound/002.mp3"),self.loader.loadSfx(self.dir+"/Sound/003.mp3"),self.loader.loadSfx(self.dir+"/Sound/004.mp3"),self.loader.loadSfx(self.dir+"/Sound/005.mp3")] #buggy
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
-
         self.data=[
         [0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"lp_planet",False]
         ,[40,0,0,0,0.003,0,0.9,0.9,0.9,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia",False]
@@ -75,12 +119,19 @@ class world(ShowBase):
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean -
         #if you want the hitbox to be correctly scaled, and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
         
-        self.u_constant=6.67408*10**(-11) #just a quick reminder
-        self.u_radius=5.25 #just what I said earlier 
-        self.u_radius_margin=0.1 #a margin added to the generic radius as a safety feature (mountains and stuff, atmosphere) 
+        # create the real data list, the one used by the program
+        self.bodies=[]
+        
+        for c in self.data:
+            temp=body()
+            temp.fill_entries(c)
+            self.bodies.append(temp)
+            temp=None
+        #self.bodies.reverse()
+        
+        # Quick presetting
         self.setBackgroundColor(0,0,0,True)
         
-
         # non-body type structures loading
         if SKYBOX=='sky':
             self.isphere=self.loader.loadModel(self.dir+"/Engine/InvertedSphere.egg") #loading skybox structure
@@ -104,19 +155,19 @@ class world(ShowBase):
                 render.setAntialias(AntialiasAttrib.MAuto)
             
 
-            for c in self.data: # loading and displaying the preloaded planets and bodies
-                if c[13] and not self.debug:
+            for c in self.bodies: # loading and displaying the preloaded planets and bodies
+                if c.is_lightSource and not self.debug:
                     # VM filtering
-                    self.filters.setVolumetricLighting(c[11][u],numsamples=50,density=0.5,decay=0.95,exposure=0.035) 
+                    self.filters.setVolumetricLighting(c.filelist[u],numsamples=50,density=0.5,decay=0.95,exposure=0.035) 
                 
-                for u in range(0,len(c[11]),2): # loading each sub-file
-                    c[11][u].reparentTo(self.render)
-                    c[11][u].setScale(c[6],c[7],c[8])
-                    c[11][u].setPos(c[0],c[1],c[2])
+                for u in range(0,len(c.filelist),2): # loading each sub-file
+                    c.filelist[u].reparentTo(self.render)
+                    c.filelist[u].setScale(tuple(c.scale))
+                    c.filelist[u].setPos(tuple(c.position))
                     #setting the collision solid up
                 self.collision_solids.append([CollisionSphere(0,0,0,self.u_radius)]) #the radius is calculated by using the average scale + the u_radius 
                 # still not working
-                self.collision_solids[len(self.collision_solids)-1].append(c[11][0].attachNewNode(CollisionNode(c[12])))
+                self.collision_solids[len(self.collision_solids)-1].append(c.filelist[0].attachNewNode(CollisionNode(c.id)))
                 # the structure of the collision_solids list will be: [[(0,1,2),1],[(0,1,2),1],[(0,1,2),1],...]
                 # asteroids and irregular shapes must be slightly bigger than their hitbox in order to avoid visual glitches
                 self.collision_solids[len(self.collision_solids)-1][1].node().addSolid(self.collision_solids[len(self.collision_solids)-1][0]) #I am definitely not explaining that
@@ -126,17 +177,17 @@ class world(ShowBase):
                 
                 print("collision: ok")
                 print("placing body: done")
-                if c[13]:
-                    self.light_Mngr.append([PointLight(c[12]+"_other")])
+                if c.is_lightSource:
+                    self.light_Mngr.append([PointLight(c.id+"_other")])
                     self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
-                    self.light_Mngr[len(self.light_Mngr)-1][1].setPos(c[0],c[1],c[2])
+                    self.light_Mngr[len(self.light_Mngr)-1][1].setPos(tuple(c.position))
                     render.setLight(self.light_Mngr[len(self.light_Mngr)-1][1]) 
 
-                    self.light_Mngr.append([AmbientLight(c[12]+"_self")])
+                    self.light_Mngr.append([AmbientLight(c.id+"_self")])
                     self.light_Mngr[len(self.light_Mngr)-1][0].setColorTemperature(1000)
                     self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
-                    for u in range(0,len(c[11]),2):
-                        c[11][u].setLight(self.light_Mngr[len(self.light_Mngr)-1][1])
+                    for u in range(0,len(c.filelist),2):
+                        c.filelist[u].setLight(self.light_Mngr[len(self.light_Mngr)-1][1])
                     print("lights: done")
                 
                 print("loaded new body, out: done")
@@ -221,9 +272,9 @@ class world(ShowBase):
             self.camera_pos=[0,0,0]
             self.camera.setPos(tuple(self.camera_pos))
         elif self.state[1]=='linked':
-            # find the object (self.state[2]) in the self.data list
-            list_pos=[self.data[n][11][0] for n in range(len(self.data))].index(object.getParent())
-            self.focus_point=self.data[list_pos][0:3] # take the focused object's coordinates
+            # find the object (self.state[2]) in the data list
+            list_pos=[self.bodies[n].filelist[0] for n in range(len(self.bodies))].index(object.getParent())
+            self.focus_point=self.bodies[list_pos].position # take the focused object's coordinates
             self.camera_pos=[self.focus_point[0]+sin(phi)*cos(-alpha)*zoom,self.focus_point[1]-cos(phi)*cos(-alpha)*zoom,self.focus_point[2]+sin(-alpha)*zoom] #keep it up to date so that it's not hard to find whend switching modes
             self.camera.setPos(tuple(self.camera_pos))
             self.camera.setHpr(self.cam_Hpr)
@@ -278,11 +329,11 @@ class world(ShowBase):
                 
             # collision events are now under constant surveillance
             acceleration=[]
-            for c in range(len(self.data)): #selects the analysed body
-                var=self.data[c]
+            for c in range(len(self.bodies)): #selects the analysed body
+                var=self.bodies[c]
                 Bdf=[0,0,0] #Bdf stands for 'bilan des forces' in french, it's the resulting acceleration
-                for d in self.data[0:c]+self.data[c+1:len(self.data)-1]: #selects the body which action on the analysed body we're studying...not sure about that english sentence though
-                    S,M=[d[9],d[0],d[1],d[2]],[var[9],var[0],var[1],var[2]]
+                for d in self.bodies[0:c]+self.bodies[c+1:len(self.bodies)-1]: #selects the body which action on the analysed body we're studying...not sure about that english sentence though
+                    S,M=[d.mass]+d.position,[var.mass]+var.position
                     temp=self.dual_a(S,M)
                     Bdf=[Bdf[x]+temp[x] for x in range(3)] # list sum
                 # add the result to the global save list
@@ -297,30 +348,29 @@ class world(ShowBase):
         return task.cont
     
     def speed_update(self,a):
-        for c in range(len(self.data)): #the function updates the speed tuple accordingly
-            self.data[c][3]+=self.timescale*a[c][0]
-            self.data[c][4]+=self.timescale*a[c][1]
-            self.data[c][5]+=self.timescale*a[c][2]
-            #print(self.data[c][3],self.data[c][4],self.data[c][5],"#")    # slow (debug phase)
+        for c in range(len(self.bodies)): #the function updates the speed tuple accordingly
+            self.bodies[c].speed[0]+=self.timescale*a[c][0]
+            self.bodies[c].speed[1]+=self.timescale*a[c][1]
+            self.bodies[c].speed[2]+=self.timescale*a[c][2]
         return 0
     
     def pos_update(self): #updates the positional coordinates
-        for c in range(len(self.data)):
-            self.data[c][0]+=self.timescale*self.data[c][3]
-            self.data[c][1]+=self.timescale*self.data[c][4]
-            self.data[c][2]+=self.timescale*self.data[c][5]
+        for c in range(len(self.bodies)):
+            self.bodies[c].position[0]+=self.timescale*self.bodies[c].speed[0]
+            self.bodies[c].position[1]+=self.timescale*self.bodies[c].speed[1]
+            self.bodies[c].position[2]+=self.timescale*self.bodies[c].speed[2]
         return 0
     
     def apply_update(self): #actually moves the hole 3d stuff around
         count=0 #local counter
-        for c in self.data:
-            for u in range(len(c[11])):
+        for c in self.bodies:
+            for u in range(len(c.filelist)):
                 if u%2!=0:
-                    c[11][u-1].setHpr(c[11][u-1],c[11][u])
+                    c.filelist[u-1].setHpr(c.filelist[u-1],c.filelist[u])
                 else:    
-                    c[11][u].setPos(c[0],c[1],c[2])    
-            if c[13]:
-                self.light_Mngr[count][1].setPos(c[0],c[1],c[2])
+                    c.filelist[u].setPos(tuple(c.position))    
+            if c.is_lightSource:
+                self.light_Mngr[count][1].setPos(tuple(c.position))
                 count+=2 #we have to change the position of the pointlight, not the ambientlight
         return 0
     
@@ -329,9 +379,9 @@ class world(ShowBase):
         if self.state[1]=='free':
             self.camera.setPos(tuple(self.camera_pos))
         elif self.state[1]=='linked':
-            # find the object (self.state[2]) in the self.data list
-            list_pos=[self.data[n][11][0] for n in range(len(self.data))].index(object.getParent())
-            self.focus_point=self.data[list_pos][0:3] # take the focused object's coordinates
+            # find the object (self.state[2]) in the data list
+            list_pos=[self.bodies[n].filelist[0] for n in range(len(self.bodies))].index(object.getParent())
+            self.focus_point=self.bodies[list_pos].position # take the focused object's coordinates
             self.camera_pos=[self.focus_point[0]+sin(phi)*cos(-alpha)*zoom,self.focus_point[1]-cos(phi)*cos(-alpha)*zoom,self.focus_point[2]+sin(-alpha)*zoom]
             self.camera.setPos(tuple(self.camera_pos))
             self.camera.setHpr(tuple(self.cam_Hpr))
@@ -363,10 +413,10 @@ class world(ShowBase):
         return O 
     
     def collision_log(self,entry):
-        from_pos=[self.data[n][11][0] for n in range(len(self.data))].index(entry.getFromNodePath().getParent())
-        into_pos=[self.data[n][11][0] for n in range(len(self.data))].index(entry.getIntoNodePath().getParent()) #find the nodepath in the list
-        f_radius=(self.data[from_pos][6]+self.data[from_pos][7]+self.data[from_pos][8])*self.u_radius/3
-        i_radius=(self.data[into_pos][6]+self.data[into_pos][7]+self.data[into_pos][8])*self.u_radius/3
+        from_pos=[self.bodies[n].filelist[0] for n in range(len(self.bodies))].index(entry.getFromNodePath().getParent())
+        into_pos=[self.bodies[n].filelist[0] for n in range(len(self.bodies))].index(entry.getIntoNodePath().getParent()) #find the nodepath in the list
+        f_radius=sum(self.bodies[from_pos].scale)*self.u_radius/3
+        i_radius=sum(self.bodies[into_pos].scale)*self.u_radius/3
         if max(f_radius,i_radius)==f_radius:
             inverted=True
             into_pos,from_pos=from_pos,into_pos
@@ -383,25 +433,26 @@ class world(ShowBase):
         interior = entry.getInteriorPoint(entry.getIntoNodePath()) # default
         surface = entry.getSurfacePoint(entry.getIntoNodePath())
         print((interior - surface).length())
-        if (interior - surface).length() >= 2*(self.data[f_pos][6]+self.data[f_pos][7]+self.data[f_pos][8])*self.u_radius/3:
+        if (interior - surface).length() >= 2*sum(self.bodies[f_pos].scale)*self.u_radius/3:
             #Here's Johny
             if self.state[2]==self.collision_solids[f_pos][1]:
                 self.state[1]='free'
                 self.state[2]=None
             self.ctrav.remove_collider(self.collision_solids[f_pos][1])
-            for c in range(0,len(self.data[f_pos][11]),2):
-                self.data[f_pos][11][c].removeNode()
-                #self.data[f_pos][11][c]=None
+            for c in range(0,len(self.bodies[f_pos].filelist),2):
+                self.bodies[f_pos].filelist[c].removeNode()
             
-            self.data[i_pos][6],self.data[i_pos][7],self.data[i_pos][8]=self.data[i_pos][6]*(self.data[i_pos][9]+self.data[f_pos][9])/self.data[i_pos][9],self.data[i_pos][7]*(self.data[i_pos][9]+self.data[f_pos][9])/self.data[i_pos][9],self.data[i_pos][8]*(self.data[i_pos][9]+self.data[f_pos][9])/self.data[i_pos][9]
-            self.data[i_pos][9]+=self.data[f_pos][9]
+            self.bodies[i_pos].scale[0]*=(self.bodies[i_pos].mass+self.bodies[f_pos].mass)/self.bodies[i_pos].mass
+            self.bodies[i_pos].scale[1]*=(self.bodies[i_pos].mass+self.bodies[f_pos].mass)/self.bodies[i_pos].mass
+            self.bodies[i_pos].scale[2]*=(self.bodies[i_pos].mass+self.bodies[f_pos].mass)/self.bodies[i_pos].mass
+            self.bodies[i_pos].mass+=self.bodies[f_pos].mass
             # scale updating ()
             ''' temporarly removed
-            for c in range(0,len(self.data[i_pos][11]),2):
-                self.data[i_pos][11][c].setScale(self.data[i_pos][6],self.data[i_pos][7],self.data[i_pos][8])
-            ''' 
+            for c in range(0,len(self.bodies[i_pos].filelist),2):
+                self.bodies[i_pos].filelist[c].setScale(tuple(self.bodies[i_pos].scale))
+            '''
             # deleting the destroyed planet's data, it is not fully functionnal as the other models remain intact
-            self.data=self.data[:f_pos]+self.data[f_pos+1:len(self.data)]
+            self.bodies=self.bodies[:f_pos]+self.bodies[f_pos+1:len(self.bodies)]
             self.collision_solids=self.collision_solids[:f_pos]+self.collision_solids[f_pos+1:len(self.collision_solids)]
             # just a quick test
             if self.debug:
