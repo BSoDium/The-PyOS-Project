@@ -121,7 +121,7 @@ class world(ShowBase):
         self.light_Mngr=[]
         self.data=[
         [0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"lp_planet",False,0.1]
-        ,[40,0,0,0,0.003,0,0.5,0.5,0.5,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia",False,0.1]
+        ,[40,0,0,0,0.003,0,0.9,0.9,0.9,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia",False,0.1]
         ,[0,70,10,0,0.005,0,0.2,0.2,0.2,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False,1]
         ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(self.dir+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True,0.1]
         ,[-100,50,70,0,0,0.002,1,1,1,1000.00,True,[self.loader.loadModel(self.dir+"/Engine/Earth2.egg"),(-0.1,0,0),self.loader.loadModel(self.dir+"/Engine/Earth2_atm.egg"),(-0.15,0,0)],"Julius_planet",False,0.1]
@@ -461,7 +461,7 @@ class world(ShowBase):
             if self.state[2]==self.collision_solids[f_pos].NodePath:
                 self.state[1]='free'
                 self.state[2]=None
-            self.collision_solids[f_pos].delete_hitbox(self.ctrav)
+            self.collision_solids[f_pos].delete_hitbox(self.ctrav) # doesn't work!!!!!!!!!!!
             #self.ctrav.remove_collider(self.collision_solids[f_pos].NodePath)
             self.bodies[f_pos].delete_body()
             

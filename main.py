@@ -231,6 +231,7 @@ class world(ShowBase):
         '''
         
         # key bindings
+        self.accept('backspace',self.system_break)
         self.accept('escape',self.toggle_pause)
         self.accept('mouse1',self.handle_select,[True])
         self.accept('z',self.move_camera,[0,True])
