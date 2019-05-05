@@ -302,7 +302,7 @@ class world(ShowBase):
         self.pointerNode=CollisionNode('cursor')
         self.pointerNP=camera.attachNewNode(self.pointerNode)
         self.pointerNode.setFromCollideMask(BitMask32.bit(1)) # separate collisions (in order to avoid mistakes during physical calculations)
-        self.cursor_ray=CollisionRay() # create the control ray
+        self.cursor_ray=CollisionRay() # create the mouse control ray
         self.pointerNode.addSolid(self.cursor_ray)
         self.ctrav.add_collider(self.pointerNP,self.queue)
 
