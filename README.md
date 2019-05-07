@@ -9,7 +9,7 @@ Hitboxes are currently being worked on, tests are being made, please be patient.
 I have found a huge bug which made the game crash on start because of wrong `GetSystemMetrics()` data, do not worry, this issue has been fixed, I hope you can see this message. If you do, just download the files again. Executing the code should be the only thing left to do after this.
 
 ## Installation
-Just [download](https://github.com/the-fancy-corporation/The-PyOS-Project/releases/download/0.9/PyOS.release.0.9.zip) the files, and run the main.py file after having installed the panda lib using `pip install panda`
+Just [download](https://github.com/the-fancy-corporation/The-PyOS-Project/releases/download/0.9/PyOS.release.0.9.zip) the latest release, extract the files, and run the **PyOS.exe** file *(if you're using windows, if you have linux or mac, just go to the correct folder)*.
 There are no other requirements for this program to work
 
 ## Contribution to the building of the project
