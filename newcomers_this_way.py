@@ -22,7 +22,7 @@ class app:
             check1=self.ask("Do you want to download the last stable release ? It is recommended to do so if you're not a developer (y/n)")
             if check1=='y':
                 self.step_title('Download has started...')
-                self.step_title('Please be patient, the download speed depends on your internet connection.\nFile size is approximately 500Mb')
+                self.step_title('Please be patient, the download speed depends on your internet connection.\nFile size is approximately 500MB')
                 urllib.request.urlretrieve(URL,CWD+'\\downloads\\update.zip')
                 '''
                 zipObject=ZipFile(CWD+'\\downloads\\update.zip','r')
