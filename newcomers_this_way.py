@@ -4,7 +4,7 @@ import sys,os
 import urllib.request
 from zipfile import ZipFile
 
-URL = 'https://github.com/the-fancy-corporation/The-PyOS-Project/releases/download/0.9/PyOS.release.0.9.zip'
+URL = 'https://github.com/the-fancy-corporation/The-PyOS-Project/releases/download/v0.10/PyOS.Release.0.10.zip'
 CWD = os.getcwd()
 class app:
     def __init__(self):
