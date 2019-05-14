@@ -7,12 +7,14 @@ try:
     from direct.showbase import DirectObject # event handling
     from direct.gui.OnscreenText import OnscreenText
     from direct.filter.CommonFilters import CommonFilters
+    from direct.gui.OnscreenImage import OnscreenImage
+    from panda3d.core import Shader
 except:
     sys.exit("please install library panda3d: pip install panda")
 import ctypes
  
 user32 = ctypes.windll.user32
-user32.SetProcessDPIAware() #windows cross platform compatibility, fixes the getsystemmetrics bug
+user32.SetProcessDPIAware() #windows fullscreen compatibility, fixes the getsystemmetrics bug
 fullscreen=True
 if fullscreen:
     loadPrcFileData('', 'fullscreen true') 
@@ -26,6 +28,7 @@ loadPrcFileData('','framebuffer-multisample 1')
 loadPrcFileData('','multisamples 2') 
 
 SKYBOX='sky'
+BLUR=False
 
 class body:
     def __init__(self):
@@ -37,10 +40,11 @@ class body:
         self.filelist=[]
         self.id=''
         self.is_lightSource=False
+        self.brakeforce=0
     
     def fill_entries(self,list):
         try:
-            test=list[13] # test the lenght of the list
+            test=list[14] # test the lenght of the list
         except:
             sys.exit('incorrect data entry, please modify your bodies data list')
         self.position=list[0:3]
@@ -51,20 +55,27 @@ class body:
         self.filelist=list[11]
         self.id=list[12]
         self.is_lightSource=list[13]
+        self.brakeforce=list[14]
+        return 0
     
     def delete_body(self):
-        return NotImplemented
+        for c in range(0,len(self.filelist),2):
+            self.filelist[c].removeNode()
+        return 0
+
+class hitbox:
+    def __init__(self):
+        self.Volume=None
+        self.NodePath=None
+        self.CollisionNode=None
     
-    def delete_hitbox(self):
-        return NotImplemented
-
-
 class world(ShowBase):
     def __init__(self):
         try:
             ShowBase.__init__(self)
         except:
             sys.exit("something went wrong: error while loading OpenGL")
+        
         
         # ------------------------------- Begin of parameter variables (pretty messy actually) ------------------------------------
         #debug
@@ -88,7 +99,8 @@ class world(ShowBase):
         self.u_radius_margin=0.1 #a margin added to the generic radius as a safety feature (mountains and stuff, atmosphere) 
         
         # ------------------------------- End of parameter variables (sry for the mess) --------------------------------------------
-
+        
+        
         # Mouse parameters 
         self.hidden_mouse=True
         wp = WindowProperties()
@@ -109,14 +121,14 @@ class world(ShowBase):
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
         self.data=[
-        [0,0,0,0,0.003,0,1,1,1,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"lp_planet",False]
-        ,[40,0,0,0,0.003,0,0.9,0.9,0.9,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia",False]
-        ,[0,70,10,0,0.005,0,0.2,0.2,0.2,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False]
-        ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(self.dir+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True]
-        ,[-100,50,70,0,0,0.002,1,1,1,1000.00,True,[self.loader.loadModel(self.dir+"/Engine/Earth2.egg"),(-0.1,0,0),self.loader.loadModel(self.dir+"/Engine/Earth2_atm.egg"),(-0.15,0,0)],"Julius_planet",False]
+        [0,0,0,0,0.003,0,0.15,0.15,0.15,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"lp_planet",False,0.1]
+        ,[40,0,0,0,0.003,0,0.05,0.05,0.05,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia",False,0.1]
+        ,[0,70,10,0,0.005,0,0.1,0.1,0.1,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False,1]
+        ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(self.dir+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True,0.1]
+        ,[-100,50,70,0,0,0.002,0.15,0.15,0.15,1000.00,True,[self.loader.loadModel(self.dir+"/Engine/Earth2.egg"),(-0.1,0,0),self.loader.loadModel(self.dir+"/Engine/Earth2_atm.egg"),(-0.15,0,0)],"Julius_planet",False,0.1]
         # insert your 3d models here, following the syntax
         ] 
-        # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean -
+        # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource,brakeforce] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean -
         #if you want the hitbox to be correctly scaled, and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
         
         # create the real data list, the one used by the program
@@ -135,10 +147,14 @@ class world(ShowBase):
         # non-body type structures loading
         if SKYBOX=='sky':
             self.isphere=self.loader.loadModel(self.dir+"/Engine/InvertedSphere.egg") #loading skybox structure
-            self.tex=loader.loadCubeMap(self.dir+'/Engine/cubemap_#.png')  
+            self.tex=loader.loadCubeMap(self.dir+'/Engine/Skybox4/skybox_#.png')
         elif SKYBOX=='arena':
             self.box=self.loader.loadModel(self.dir+"/Engine/arena.egg") 
-
+        
+        #load shaders (optionnal)
+        '''
+        sun_shader=Shader.load(Shader.SLGLSL,self.dir+'/Engine/Shaders/flare_v.glsl',self.dir+'/Engine/Shaders/flare_f.glsl')
+        '''
         self.orbit_lines=[] #under developement
         
         # see https://www.panda3d.org/manual/?title=Collision_Solids for further collision interaction informations
@@ -151,29 +167,35 @@ class world(ShowBase):
             '''
             if not self.debug:
                 self.filters.set_gamma_adjust(1.0) # can be usefull
-                self.filters.set_bloom(intensity=1,size="large")
+                self.filters.set_bloom(intensity=1,size="medium")
                 render.setAntialias(AntialiasAttrib.MAuto)
             
 
             for c in self.bodies: # loading and displaying the preloaded planets and bodies
+                
                 if c.is_lightSource and not self.debug:
                     # VM filtering
                     self.filters.setVolumetricLighting(c.filelist[u],numsamples=50,density=0.5,decay=0.95,exposure=0.035) 
+                    #c.filelist[u].set_shader(sun_shader)
+                    if BLUR: self.filters.setCartoonInk()
                 
                 for u in range(0,len(c.filelist),2): # loading each sub-file
                     c.filelist[u].reparentTo(self.render)
                     c.filelist[u].setScale(tuple(c.scale))
                     c.filelist[u].setPos(tuple(c.position))
                     #setting the collision solid up
-                self.collision_solids.append([CollisionSphere(0,0,0,self.u_radius)]) #the radius is calculated by using the average scale + the u_radius 
-                # still not working
-                self.collision_solids[len(self.collision_solids)-1].append(c.filelist[0].attachNewNode(CollisionNode(c.id)))
-                # the structure of the collision_solids list will be: [[(0,1,2),1],[(0,1,2),1],[(0,1,2),1],...]
+                temp=hitbox()
+                temp.Volume=CollisionSphere(0,0,0,self.u_radius)
+                temp.NodePath=c.filelist[0].attachNewNode(CollisionNode(c.id))
+                temp.CollisionNode=temp.NodePath.node()
+                self.collision_solids.append(temp) #the radius is calculated by using the average scale + the u_radius 
+                # the structure of the collision_solids list will be: [temp1,temp2,...]
                 # asteroids and irregular shapes must be slightly bigger than their hitbox in order to avoid visual glitches
-                self.collision_solids[len(self.collision_solids)-1][1].node().addSolid(self.collision_solids[len(self.collision_solids)-1][0]) #I am definitely not explaining that
+                self.collision_solids[len(self.collision_solids)-1].CollisionNode.addSolid(self.collision_solids[len(self.collision_solids)-1].Volume) #I am definitely not explaining that
+                temp=None
                 if self.debug:
                     loadPrcFileData('', 'show-frame-rate-meter true')
-                    self.collision_solids[len(self.collision_solids)-1][1].show() # debugging purposes only
+                    self.collision_solids[len(self.collision_solids)-1].NodePath.show() # debugging purposes only
                 
                 print("collision: ok")
                 print("placing body: done")
@@ -184,7 +206,7 @@ class world(ShowBase):
                     render.setLight(self.light_Mngr[len(self.light_Mngr)-1][1]) 
 
                     self.light_Mngr.append([AmbientLight(c.id+"_self")])
-                    self.light_Mngr[len(self.light_Mngr)-1][0].setColorTemperature(1000)
+                    self.light_Mngr[len(self.light_Mngr)-1][0].setColorTemperature(3000)
                     self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
                     for u in range(0,len(c.filelist),2):
                         c.filelist[u].setLight(self.light_Mngr[len(self.light_Mngr)-1][1])
@@ -202,13 +224,13 @@ class world(ShowBase):
                 self.isphere.reparentTo(self.render)
             elif SKYBOX=='arena':
                 self.box.setPos(0,0,0)
-                self.box.setScale(10000)
+                self.box.setScale(100)
                 self.box.reparentTo(self.render)
             # collision traverser and other collision stuff # that's super important, and super tricky to explain so just check the wiki
             self.ctrav = CollisionTraverser()
             self.queue = CollisionHandlerQueue()
             for n in self.collision_solids:
-                self.ctrav.add_collider(n[1],self.queue)
+                self.ctrav.add_collider(n.NodePath,self.queue)
             # the traverser will be automatically updated, no need to repeat this every frame
             # debugging only
             if self.debug:
@@ -216,14 +238,11 @@ class world(ShowBase):
             # play a random music
             self.current_playing=random.randint(0,len(self.sounds)-1)
             self.sounds[self.current_playing].play()
+
             # task manager stuff comes here
-            self.taskMgr.add(self.mouse_check,'mousePositionTask')
-            self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
-            self.taskMgr.add(self.Sound_Mngr,'MusicHandle')
-            self.taskMgr.add(self.camera_update,'cameraPosition')
+            self.taskMgr.add(self.intro_loop,'showIntroPic')
         except:
-            sys.exit(":( something went wrong: 3d models could not be loaded")
-        
+            sys.exit(":( something went wrong: files could not be loaded")
         '''
         self.showsimpletext("All modules loaded, simulation running",(-1.42,0.95),(0.04,0.04),None,(1,1,1,True))
         self.showsimpletext("PyOS experimental build V0.4",(-1.5,0.90),(0.04,0.04),None,(1,1,1,True))
@@ -234,12 +253,15 @@ class world(ShowBase):
         self.accept('backspace',self.system_break)
         self.accept('escape',self.toggle_pause)
         self.accept('mouse1',self.handle_select,[True])
+        self.accept('wheel_up',self.handle_scrolling,[True]) # center button (just a quick test)
+        self.accept('wheel_down',self.handle_scrolling,[False])
         self.accept('z',self.move_camera,[0,True])
         self.accept('q',self.move_camera,[1,True])
         self.accept('s',self.move_camera,[2,True])
         self.accept('d',self.move_camera,[3,True])
         self.accept('a',self.move_camera,[4,True])
         self.accept('e',self.move_camera,[5,True])
+        
         self.accept('z-up',self.move_camera,[0,False])
         self.accept('q-up',self.move_camera,[1,False])
         self.accept('s-up',self.move_camera,[2,False])
@@ -285,7 +307,7 @@ class world(ShowBase):
         self.pointerNode=CollisionNode('cursor')
         self.pointerNP=camera.attachNewNode(self.pointerNode)
         self.pointerNode.setFromCollideMask(BitMask32.bit(1)) # separate collisions (in order to avoid mistakes during physical calculations)
-        self.cursor_ray=CollisionRay() # create the control ray
+        self.cursor_ray=CollisionRay() # create the mouse control ray
         self.pointerNode.addSolid(self.cursor_ray)
         self.ctrav.add_collider(self.pointerNP,self.queue)
 
@@ -295,10 +317,24 @@ class world(ShowBase):
     def showsimpletext(self,content,pos,scale,bg,fg): #shows a predefined, basic text on the screen (variable output only)
         return OnscreenText(text=content,pos=pos,scale=scale,bg=bg,fg=fg)
     
+    def intro_loop(self,task):
+        if not(task.time):
+            self.screen_fill=OnscreenImage(image=str(self.dir)+"/Engine/main_page.png",pos = (0, 0, 0),scale=(1.77777778,1,1))
+        elif task.time>3:
+            self.screen_fill.destroy()
+            self.taskMgr.add(self.mouse_check,'mousePositionTask')
+            self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
+            self.taskMgr.add(self.Sound_Mngr,'MusicHandle')
+            self.taskMgr.add(self.camera_update,'cameraPosition')
+            self.taskMgr.remove('showIntroPic')
+            return None
+        return task.cont
+    
     def placement_Mngr(self,task): # main game mechanics, frame updating function (kinda, all pausing and menu functions must be applied here
         if self.state[0]=='running' or not task.time:
             self.ctrav.traverse(render)
             #self.queue = CollisionHandlerQueue() # update the collision queue
+            brakeforce=[0 for n in range(len(self.bodies))] # create an empty brakeforce list
             if self.queue.getNumEntries():
                 if self.debug:
                     print(self.queue.getNumEntries()) # debug
@@ -312,7 +348,7 @@ class world(ShowBase):
                 # run the check for the body-with-body collisions
                 for c in range(0,len(temp1),2): 
                     entry=temp1[c]
-                    self.collision_log(entry)
+                    brakeforce=self.collision_log(entry,brakeforce)
                 # run the check for the cursor-with-body collisions
                 for c in range(len(temp2)):
                     entry=temp2[c]
@@ -323,7 +359,7 @@ class world(ShowBase):
                 self.ctrav.clear_colliders()
                 self.queue = CollisionHandlerQueue()
                 for n in self.collision_solids:
-                    self.ctrav.add_collider(n[1],self.queue)
+                    self.ctrav.add_collider(n.NodePath,self.queue)
                 self.ctrav.add_collider(self.pointerNP,self.queue) # add the cursor ray again
             else:
                 self.watched=None
@@ -340,7 +376,7 @@ class world(ShowBase):
                 # add the result to the global save list
                 acceleration.append(Bdf)
             #update the bodies' position
-            self.speed_update(acceleration)
+            self.speed_update(acceleration,brakeforce)
             self.pos_update()
             self.apply_update()
         elif self.state[0]=='paused':
@@ -348,11 +384,15 @@ class world(ShowBase):
             self.iteration+=1
         return task.cont
     
-    def speed_update(self,a):
+    def speed_update(self,a,brakeforce):
         for c in range(len(self.bodies)): #the function updates the speed tuple accordingly
             self.bodies[c].speed[0]+=self.timescale*a[c][0]
+            #self.bodies[c].speed[0]/=brakeforce[c]+1 # aero/lytho braking has to be applied to the colliding object
+            # actually, speed isn't applied that way
             self.bodies[c].speed[1]+=self.timescale*a[c][1]
+            #self.bodies[c].speed[1]/=brakeforce[c]+1
             self.bodies[c].speed[2]+=self.timescale*a[c][2]
+            #self.bodies[c].speed[2]/=brakeforce[c]+1 
         return 0
     
     def pos_update(self): #updates the positional coordinates
@@ -411,9 +451,9 @@ class world(ShowBase):
         O.append(x)
         O.append(y)
         O.append(z)
-        return O 
+        return O
     
-    def collision_log(self,entry):
+    def collision_log(self,entry,brakeforce):
         from_pos=[self.bodies[n].filelist[0] for n in range(len(self.bodies))].index(entry.getFromNodePath().getParent())
         into_pos=[self.bodies[n].filelist[0] for n in range(len(self.bodies))].index(entry.getIntoNodePath().getParent()) #find the nodepath in the list
         f_radius=sum(self.bodies[from_pos].scale)*self.u_radius/3
@@ -423,25 +463,24 @@ class world(ShowBase):
             into_pos,from_pos=from_pos,into_pos
         else:
             inverted=False # currently unused
+        brakeforce[from_pos]=self.bodies[from_pos].brakeforce # get the force given in the data list
         # those are the two positions of the nodepaths, now we need to know which one is bigger, in order to obtain the fusion effect
         # from_pos is the smaller body, into_pos is the bigger one
         self.collision_gfx(self.momentum_transfer(from_pos,into_pos,entry,inverted),f_radius,i_radius)
-        return 0
+        return brakeforce
     
     def momentum_transfer(self,f_pos,i_pos,entry,inverted):
         if self.debug:
             print("colliding") # debug, makes the game laggy
         interior = entry.getInteriorPoint(entry.getIntoNodePath()) # default
         surface = entry.getSurfacePoint(entry.getIntoNodePath())
-        print((interior - surface).length())
+        print((interior - surface).length()) # debug
         if (interior - surface).length() >= 2*sum(self.bodies[f_pos].scale)*self.u_radius/3:
-            #Here's Johny
-            if self.state[2]==self.collision_solids[f_pos][1]:
+            if self.state[2]==self.collision_solids[f_pos].NodePath:
                 self.state[1]='free'
                 self.state[2]=None
-            self.ctrav.remove_collider(self.collision_solids[f_pos][1])
-            for c in range(0,len(self.bodies[f_pos].filelist),2):
-                self.bodies[f_pos].filelist[c].removeNode()
+            self.ctrav.remove_collider(self.collision_solids[f_pos].NodePath)
+            self.bodies[f_pos].delete_body()
             
             self.bodies[i_pos].scale[0]*=(self.bodies[i_pos].mass+self.bodies[f_pos].mass)/self.bodies[i_pos].mass
             self.bodies[i_pos].scale[1]*=(self.bodies[i_pos].mass+self.bodies[f_pos].mass)/self.bodies[i_pos].mass
@@ -452,7 +491,7 @@ class world(ShowBase):
             for c in range(0,len(self.bodies[i_pos].filelist),2):
                 self.bodies[i_pos].filelist[c].setScale(tuple(self.bodies[i_pos].scale))
             '''
-            # deleting the destroyed planet's data, it is not fully functionnal as the other models remain intact
+            # deleting the destroyed planet's data
             self.bodies=self.bodies[:f_pos]+self.bodies[f_pos+1:len(self.bodies)]
             self.collision_solids=self.collision_solids[:f_pos]+self.collision_solids[f_pos+1:len(self.collision_solids)]
             # just a quick test
@@ -539,7 +578,8 @@ class world(ShowBase):
         return None
     
     def show_credits(self):
-        return "created by l3alr0g (at least this part, I'll do something better at the end)"
+        print("created by l3alr0g (at least this part, I'll do something better at the end)")
+        return None
         
     def system_break(self):
         # place your data saving routines here
@@ -548,6 +588,20 @@ class world(ShowBase):
         print("out: done")
         sys.exit(0)
         return None
+    
+    def handle_scrolling(self,up): # up is a boolean: up=True means up, up=False means down
+        if up and self.state[0]=='running':
+            if self.state[1]=='linked':
+                self.zoom_distance*=0.95
+            else:
+                self.camera_delta*=1.1
+        elif not up and self.state[0]=='running':
+            if self.state[1]=='linked':
+                self.zoom_distance/=0.95
+            else:
+                self.camera_delta/=1.1
+        return None
+
     
     def rotate_camera(self):
         self.camera.setHpr(tuple(self.cam_Hpr))
