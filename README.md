@@ -1,13 +1,13 @@
-## Python-Orbital-Mechanics V 0.1.2 alpha: 
+## Python-Orbital-Mechanics V 0.10: 
 The game mechanics do work, but there is still a lot of work to do (see project for more to-do-list info)
 Hitboxes are currently being worked on, tests are being made, please be patient. It is possible to import 3d models and test simulations using those, but it is very hard to master though, as I haven't created a syntax guide for users. If you still wish to do so, please contact us by creating a [new issue](https://github.com/the-fancy-corporation/The-PyOS-Project/issues/new/choose)
 
-## Some screenshots
-![here is the current scenery](/Screenshots/Scrnshot_1.png)
-![Some other cool shots](/Screenshots/Scrnshot_2.png)
+### Screenshots
+![here is the current scenery](/Screenshots/Scrnshot_3.png)
+![Some other cool shots](/Screenshots/Scrnshot_4.png)
 
 ## Installation
-Just [download](https://github.com/the-fancy-corporation/The-PyOS-Project/archive/master.zip) the files, and run the main.py file after having installed the panda lib using `pip install panda`
+Just [download](https://github.com/the-fancy-corporation/The-PyOS-Project/releases/download/0.9/PyOS.release.0.9.zip) the latest release, extract the files, and run the **PyOS.exe** file *(if you're using windows, if you have linux or mac, just go to the correct folder)*.
 There are no other requirements for this program to work
 
 ## Contribution to the building of the project
