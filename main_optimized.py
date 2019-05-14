@@ -109,7 +109,7 @@ class world(ShowBase):
 
         # preparing the menu text list:
         self.menu_text=[]
-        self.menu_text.append(self.showsimpletext('The PyOS project V0.5',(0,0.4),(0.07,0.07),None,(1,1,1,True)))
+        self.menu_text.append(self.showsimpletext('The PyOS project V0.10',(0,0.4),(0.07,0.07),None,(1,1,1,True)))
         self.menu_text.append(self.showsimpletext('Resume',(0,0.3),(0.06,0.06),None,(1,1,1,True)))
         self.menu_text.append(self.showsimpletext('Quit',(0,0.2),(0.06,0.06),None,(1,1,1,True)))
 
@@ -245,7 +245,7 @@ class world(ShowBase):
             sys.exit(":( something went wrong: files could not be loaded")
         '''
         self.showsimpletext("All modules loaded, simulation running",(-1.42,0.95),(0.04,0.04),None,(1,1,1,True))
-        self.showsimpletext("PyOS experimental build V0.4",(-1.5,0.90),(0.04,0.04),None,(1,1,1,True))
+        self.showsimpletext("PyOS build V0.10",(-1.5,0.90),(0.04,0.04),None,(1,1,1,True))
         self.showsimpletext("By l3alr0g",(-1.68,0.85),(0.04,0.04),None,(1,1,1,True))
         '''
         
