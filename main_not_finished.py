@@ -8,11 +8,10 @@ try:
     from direct.gui.OnscreenText import OnscreenText
     from direct.filter.CommonFilters import CommonFilters
     from direct.gui.OnscreenImage import OnscreenImage
-    from panda3d.core import Shader
 except:
     sys.exit("please install library panda3d: pip install panda")
 import ctypes
- 
+
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware() #windows fullscreen compatibility, fixes the getsystemmetrics bug
 fullscreen=True
@@ -28,7 +27,7 @@ loadPrcFileData('','framebuffer-multisample 1')
 loadPrcFileData('','multisamples 2') 
 
 SKYBOX='sky'
-BLUR=False
+BLUR=False # debug
 
 class body:
     def __init__(self):
@@ -95,7 +94,7 @@ class world(ShowBase):
         self.collision_status=False # Keep this on False, that's definitely not a setting # currently unused
 
         self.u_constant=6.67408*10**(-11) #just a quick reminder
-        self.u_radius=5.25 #just what I said earlier 
+        self.u_radius=4.9 #just what I said earlier 
         self.u_radius_margin=0.1 #a margin added to the generic radius as a safety feature (mountains and stuff, atmosphere) 
         
         # ------------------------------- End of parameter variables (sry for the mess) --------------------------------------------
@@ -121,12 +120,12 @@ class world(ShowBase):
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
         self.data=[
-        [0,0,0,0,0.003,0,0.15,0.15,0.15,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"lp_planet",False,0.1]
-        ,[40,0,0,0,0.003,0,0.05,0.05,0.05,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia",False,0.1]
+        [0,0,0,0,0.003,0,0.30,0.30,0.30,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"low_poly_planet01",False,0.1]
+        ,[40,0,0,0,0.003,0,0.05,0.05,0.05,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia_modified",False,0.1]
         ,[0,70,10,0,0.005,0,0.1,0.1,0.1,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False,1]
         ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(self.dir+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True,0.1]
-        ,[-100,50,70,0,0,0.002,0.15,0.15,0.15,1000.00,True,[self.loader.loadModel(self.dir+"/Engine/Earth2.egg"),(-0.1,0,0),self.loader.loadModel(self.dir+"/Engine/Earth2_atm.egg"),(-0.15,0,0)],"Julius_planet",False,0.1]
-        # insert your 3d models here, following the syntax
+        ,[-100,50,70,0,0,0.003,0.15,0.15,0.15,1000.00,True,[self.loader.loadModel(self.dir+"/Engine/Earth2.egg"),(-0.1,0,0),self.loader.loadModel(self.dir+"/Engine/Earth2_atm.egg"),(-0.15,0,0)],"big_fucking_planet",False,0.1]
+        # insert your 3d models here, following the syntax (this is the default scene that will be loaded on startup)
         ] 
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource,brakeforce] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean -
         #if you want the hitbox to be correctly scaled, and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
@@ -320,7 +319,7 @@ class world(ShowBase):
     def intro_loop(self,task):
         if not(task.time):
             self.screen_fill=OnscreenImage(image=str(self.dir)+"/Engine/main_page.png",pos = (0, 0, 0),scale=(1.77777778,1,1))
-        elif task.time>3:
+        elif task.time>3.5:
             self.screen_fill.destroy()
             self.taskMgr.add(self.mouse_check,'mousePositionTask')
             self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
@@ -466,7 +465,7 @@ class world(ShowBase):
         brakeforce[from_pos]=self.bodies[from_pos].brakeforce # get the force given in the data list
         # those are the two positions of the nodepaths, now we need to know which one is bigger, in order to obtain the fusion effect
         # from_pos is the smaller body, into_pos is the bigger one
-        self.collision_gfx(self.momentum_transfer(from_pos,into_pos,entry,inverted),f_radius,i_radius)
+        self.collision_gfx(self.momentum_transfer(from_pos,into_pos,entry,inverted),f_radius,i_radius) #some useless data remains from version 0.9
         return brakeforce
     
     def momentum_transfer(self,f_pos,i_pos,entry,inverted):
@@ -644,6 +643,7 @@ class world(ShowBase):
             # focus_point coordinates modifier code here:
             if self.state==['running','free',None]:
                 self.cam_Hpr[0]-=x*self.sensitivity_x # the - fixes a bug I can't solve
+                # sensitivity is a coefficient used for mouse displacement routines
                 self.cam_Hpr[1]+=y*self.sensitivity_y # those formulas do not work when theta (self.cam_Hpr[2]) changes 
                 self.rotate_camera()
                 self.center_mouse()
