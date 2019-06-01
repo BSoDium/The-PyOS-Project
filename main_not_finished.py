@@ -116,7 +116,7 @@ class world(ShowBase):
         # https://fr.wikibooks.org/wiki/Plan%C3%A9tologie/La_temp%C3%A9rature_de_surface_des_plan%C3%A8tes#Puissance_re%C3%A7ue_par_la_Terre
 
         # Defining important data lists
-        self.sounds=[self.loader.loadSfx(self.dir+"/Sound/001.mp3"),self.loader.loadSfx(self.dir+"/Sound/002.mp3"),self.loader.loadSfx(self.dir+"/Sound/003.mp3"),self.loader.loadSfx(self.dir+"/Sound/004.mp3"),self.loader.loadSfx(self.dir+"/Sound/005.mp3")] #buggy
+        self.sounds=[self.loader.loadSfx(self.dir+"/Sound/001.mp3"),self.loader.loadSfx(self.dir+"/Sound/002.mp3"),self.loader.loadSfx(self.dir+"/Sound/Blazing-Stars.mp3"),self.loader.loadSfx(self.dir+"/Sound/Cold-Moon.mp3"),self.loader.loadSfx(self.dir+"/Sound/Light-Years_v001.mp3")] #buggy
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
         self.data=[
