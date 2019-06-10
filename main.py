@@ -6,13 +6,14 @@ try:
     from panda3d.core import *
     from direct.showbase import DirectObject # event handling
     from direct.gui.OnscreenText import OnscreenText
+    from direct.gui.DirectGui import *
     from direct.filter.CommonFilters import CommonFilters
     from direct.gui.OnscreenImage import OnscreenImage
-    from panda3d.core import Shader
+    from direct.particles.ParticleEffect import ParticleEffect
 except:
     sys.exit("please install library panda3d: pip install panda")
 import ctypes
- 
+
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware() #windows fullscreen compatibility, fixes the getsystemmetrics bug
 fullscreen=True
@@ -28,7 +29,8 @@ loadPrcFileData('','framebuffer-multisample 1')
 loadPrcFileData('','multisamples 2') 
 
 SKYBOX='sky'
-BLUR=False
+BLUR=False # debug
+MAINDIR=Filename.fromOsSpecific(os.getcwd())
 
 class body:
     def __init__(self):
@@ -69,6 +71,39 @@ class hitbox:
         self.NodePath=None
         self.CollisionNode=None
     
+class particle:
+    def __init__(self):
+        self.effect=ParticleEffect() # self.effect is the particle that will be used as a template
+        self.config_path=None
+        self.particle_list=[]
+        return None
+    def load(self):
+        try:
+            self.effect.loadConfig(MAINDIR+self.config_path)
+        except:
+            print("[WARNING]: couldn't load particle ptf file")
+        return None
+    def activate(self,rank,focus): # rank is the place in the list (from 0 to len(datalist))
+        try:
+            self.particle_list[rank].start(parent=focus,renderParent=focus)
+            self.particle_list[rank].setPos(0,0,0) # default, might be removed in further commits
+        except:
+            print('[WARNING]: incorrect rank value / generate_base_part() must be executed first')
+        return None
+    def deactivate(self,rank):
+        try:
+            self.particle_list[rank].softStop()
+        except:
+            print('[WARNING]: incorrect rank value / generate_base_part() must be executed first')
+        return None
+    def generate_base_part(self,datalist): # the datalist is the self.bodies list
+        self.load()
+        for c in range(len(datalist)):
+            self.particle_list.append(self.effect)
+        return None
+            
+
+
 class world(ShowBase):
     def __init__(self):
         try:
@@ -81,8 +116,7 @@ class world(ShowBase):
         #debug
         self.debug=False #REMEMBER TO TURN THIS OFF WHEN COMMITTING THIS TO GITHUB YOU GODDAM MORRON !!!
         #debug
-        self.dir=Filename.fromOsSpecific(os.getcwd())
-        self.timescale=5
+        self.timescale=5 # this can be changed at any moment 
         self.worldscale=0.1 # currently unused
         
         self.camera_delta=0.5 # camera delta displacement
@@ -95,12 +129,12 @@ class world(ShowBase):
         self.collision_status=False # Keep this on False, that's definitely not a setting # currently unused
 
         self.u_constant=6.67408*10**(-11) #just a quick reminder
-        self.u_radius=5.25 #just what I said earlier 
+        self.u_radius=4.1 #just what I said earlier 
         self.u_radius_margin=0.1 #a margin added to the generic radius as a safety feature (mountains and stuff, atmosphere) 
         
         # ------------------------------- End of parameter variables (sry for the mess) --------------------------------------------
         
-        
+
         # Mouse parameters 
         self.hidden_mouse=True
         wp = WindowProperties()
@@ -109,26 +143,43 @@ class world(ShowBase):
 
         # preparing the menu text list:
         self.menu_text=[]
-        self.menu_text.append(self.showsimpletext('The PyOS project V0.10',(0,0.4),(0.07,0.07),None,(1,1,1,True)))
+        self.menu_text.append(self.showsimpletext('The PyOS project V0.10 alpha',(0,0.4),(0.07,0.07),None,(1,1,1,True)))
         self.menu_text.append(self.showsimpletext('Resume',(0,0.3),(0.06,0.06),None,(1,1,1,True)))
         self.menu_text.append(self.showsimpletext('Quit',(0,0.2),(0.06,0.06),None,(1,1,1,True)))
 
-        # btw I found something about energy transmition through thermal radiation. I think it uses some Boltzmann formula stuff. Link here:
+        # btw I found something about energy transmission through thermal radiation. I think it uses some Boltzmann formula stuff. Link here:
         # https://fr.wikibooks.org/wiki/Plan%C3%A9tologie/La_temp%C3%A9rature_de_surface_des_plan%C3%A8tes#Puissance_re%C3%A7ue_par_la_Terre
 
         # Defining important data lists
-        self.sounds=[self.loader.loadSfx(self.dir+"/Sound/001.mp3"),self.loader.loadSfx(self.dir+"/Sound/002.mp3"),self.loader.loadSfx(self.dir+"/Sound/003.mp3"),self.loader.loadSfx(self.dir+"/Sound/004.mp3"),self.loader.loadSfx(self.dir+"/Sound/005.mp3")] #buggy
+        # music imports (paths)
+        self.sounds=[MAINDIR+"/Sound/001.mp3",
+        MAINDIR+"/Sound/Blazing-Stars.mp3",
+        MAINDIR+"/Sound/Cold-Moon.mp3",
+        MAINDIR+"/Sound/Light-Years_v001.mp3",
+        MAINDIR+"/Sound/The-Darkness-Below.mp3",
+        MAINDIR+"/Sound/Retro-Sci-Fi-Planet.mp3",
+        MAINDIR+"/Sound/droid-bishop-nightland.mp3",
+        MAINDIR+"/Sound/interstellar-ost-03-dust-by-hans-zimmer.mp3",
+        MAINDIR+"/Sound/interstellar-ost-04-day-one-by-hans-zimmer.mp3",
+        MAINDIR+"/Sound/ascendant-remains-2015.mp3",
+        MAINDIR+"/Sound/droid-bishop-nightland.mp3",
+        MAINDIR+"/Sound/john-carpenter-utopian-facade-official-music-video.mp3",
+        MAINDIR+"/Sound/stranger-things-2-eulogy.mp3",
+        MAINDIR+"/Sound/interstellar-ost-07-the-wormhole-by-hans-zimmer.mp3"] 
+        
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
         self.data=[
-        [0,0,0,0,0.003,0,0.15,0.15,0.15,100000.00,True,[self.loader.loadModel(self.dir+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(self.dir+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"lp_planet",False,0.1]
-        ,[40,0,0,0,0.003,0,0.05,0.05,0.05,20.00,True,[self.loader.loadModel(self.dir+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia",False,0.1]
-        ,[0,70,10,0,0.005,0,0.1,0.1,0.1,40.00,True,[self.loader.loadModel(self.dir+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False,1]
-        ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(self.dir+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(self.dir+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True,0.1]
-        ,[-100,50,70,0,0,0.002,0.15,0.15,0.15,1000.00,True,[self.loader.loadModel(self.dir+"/Engine/Earth2.egg"),(-0.1,0,0),self.loader.loadModel(self.dir+"/Engine/Earth2_atm.egg"),(-0.15,0,0)],"Julius_planet",False,0.1]
-        # insert your 3d models here, following the syntax
+        [0,0,0,0,0.003,0,0.30,0.30,0.30,100000.00,True,[self.loader.loadModel(MAINDIR+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(MAINDIR+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"low_poly_planet01",False,0.1]
+        ,[10,0,0,0,0.003,0,0.05,0.05,0.05,20.00,True,[self.loader.loadModel(MAINDIR+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia_modified",False,0.1]
+        ,[0,70,10,0,0.005,0,0.1,0.1,0.1,40.00,True,[self.loader.loadModel(MAINDIR+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False,1]
+        ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(MAINDIR+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(MAINDIR+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True,0.1]
+        ,[-100,50,70,0,0,0.003,0.15,0.15,0.15,1000.00,True,[self.loader.loadModel(MAINDIR+"/Engine/Earth2.egg"),(-0.1,0,0),self.loader.loadModel(MAINDIR+"/Engine/Earth2_atm.egg"),(-0.15,0,0)],"big_fucking_planet",False,0.1]
+        ,[200,0,0,-0.0001,0,0.05,0.3,0.3,0.3,100000,False,[self.loader.loadModel(MAINDIR+"/Engine/T0.egg"),(0,0.01,0),self.loader.loadModel(MAINDIR+"/Engine/T1.egg"),(0,0.01,0),self.loader.loadModel(MAINDIR+"/Engine/T2.egg"),(0,0.01,0),self.loader.loadModel(MAINDIR+"/Engine/T3.egg"),(0,0.01,0),self.loader.loadModel(MAINDIR+"/Engine/T4.egg"),(0,0.01,0)],"iss",False,0]
+        # insert your 3d models here, following the syntax (this is the default scene that will be loaded on startup)
         ] 
-        # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource,brakeforce] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list - id: str - lightsource: boolean -
+        # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource,brakeforce] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list (first file must be the ground, the others are atmosphere models)
+        #id: str - lightsource: boolean -
         #if you want the hitbox to be correctly scaled, and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
         
         # create the real data list, the one used by the program
@@ -144,22 +195,34 @@ class world(ShowBase):
         # Quick presetting
         self.setBackgroundColor(0,0,0,True)
         
+        # enable particles
+        
+        self.enableParticles()
+        # create particle class object
+        self.particle=particle()
+        # intialize object:
+        self.particle.config_path='/Engine/destruction_ring.ptf' # the MAINDIR is already included inside the class definition
+        self.particle.generate_base_part(self.bodies) # now there is particle node for every object in the scene (every planet)
+        #self.particle.activate(0,render) # generate static particles at coordinates 0,0,0 (debugging purpose only)
+
+
         # non-body type structures loading
         if SKYBOX=='sky':
-            self.isphere=self.loader.loadModel(self.dir+"/Engine/InvertedSphere.egg") #loading skybox structure
-            self.tex=loader.loadCubeMap(self.dir+'/Engine/Skybox4/skybox_#.png')
+            self.isphere=self.loader.loadModel(MAINDIR+"/Engine/InvertedSphere.egg") #loading skybox structure
+            self.tex=loader.loadCubeMap(MAINDIR+'/Engine/Skybox4/skybox_#.png')
         elif SKYBOX=='arena':
-            self.box=self.loader.loadModel(self.dir+"/Engine/arena.egg") 
+            self.box=self.loader.loadModel(MAINDIR+"/Engine/arena.egg") 
         
         #load shaders (optionnal)
         '''
-        sun_shader=Shader.load(Shader.SLGLSL,self.dir+'/Engine/Shaders/flare_v.glsl',self.dir+'/Engine/Shaders/flare_f.glsl')
+        sun_shader=Shader.load(Shader.SLGLSL,MAINDIR+'/Engine/Shaders/flare_v.glsl',MAINDIR+'/Engine/Shaders/flare_f.glsl')
         '''
         self.orbit_lines=[] #under developement
         
         # see https://www.panda3d.org/manual/?title=Collision_Solids for further collision interaction informations
         base.graphicsEngine.openWindows()
         try:
+            print('\n[Loader manager]:\n')
             # filters predefining
             self.filters = CommonFilters(base.win, base.cam)
             '''
@@ -183,12 +246,14 @@ class world(ShowBase):
                     c.filelist[u].reparentTo(self.render)
                     c.filelist[u].setScale(tuple(c.scale))
                     c.filelist[u].setPos(tuple(c.position))
+                    if u==0 and not(c.is_lightSource):
+                        c.filelist[u].setShaderAuto() #activate auto shading for compact, non translucent bodies
                     #setting the collision solid up
                 temp=hitbox()
                 temp.Volume=CollisionSphere(0,0,0,self.u_radius)
                 temp.NodePath=c.filelist[0].attachNewNode(CollisionNode(c.id))
                 temp.CollisionNode=temp.NodePath.node()
-                self.collision_solids.append(temp) #the radius is calculated by using the average scale + the u_radius 
+                self.collision_solids.append(temp) #the radius is calculated by using the average scale + the self.u_radius 
                 # the structure of the collision_solids list will be: [temp1,temp2,...]
                 # asteroids and irregular shapes must be slightly bigger than their hitbox in order to avoid visual glitches
                 self.collision_solids[len(self.collision_solids)-1].CollisionNode.addSolid(self.collision_solids[len(self.collision_solids)-1].Volume) #I am definitely not explaining that
@@ -237,7 +302,8 @@ class world(ShowBase):
                 self.ctrav.showCollisions(render) 
             # play a random music
             self.current_playing=random.randint(0,len(self.sounds)-1)
-            self.sounds[self.current_playing].play()
+            self.current_song=self.loader.loadSfx(self.sounds[self.current_playing])
+            self.current_song.play()
 
             # task manager stuff comes here
             self.taskMgr.add(self.intro_loop,'showIntroPic')
@@ -269,7 +335,6 @@ class world(ShowBase):
         self.accept('a-up',self.move_camera,[4,False])
         self.accept('e-up',self.move_camera,[5,False])
         self.keymap=['z',0,'q',0,'s',0,'d',0,'a',0,'e',0,'mouse1',0]
-        
         
         self.disable_mouse()
         
@@ -319,8 +384,8 @@ class world(ShowBase):
     
     def intro_loop(self,task):
         if not(task.time):
-            self.screen_fill=OnscreenImage(image=str(self.dir)+"/Engine/main_page.png",pos = (0, 0, 0),scale=(1.77777778,1,1))
-        elif task.time>3:
+            self.screen_fill=OnscreenImage(image=str(MAINDIR)+"/Engine/main_page.png",pos = (0, 0, 0),scale=(1.77777778,1,1))
+        elif task.time>3.5:
             self.screen_fill.destroy()
             self.taskMgr.add(self.mouse_check,'mousePositionTask')
             self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
@@ -466,7 +531,7 @@ class world(ShowBase):
         brakeforce[from_pos]=self.bodies[from_pos].brakeforce # get the force given in the data list
         # those are the two positions of the nodepaths, now we need to know which one is bigger, in order to obtain the fusion effect
         # from_pos is the smaller body, into_pos is the bigger one
-        self.collision_gfx(self.momentum_transfer(from_pos,into_pos,entry,inverted),f_radius,i_radius)
+        self.collision_gfx(self.momentum_transfer(from_pos,into_pos,entry,inverted),f_radius,i_radius) #some useless data remains from version 0.9
         return brakeforce
     
     def momentum_transfer(self,f_pos,i_pos,entry,inverted):
@@ -474,7 +539,8 @@ class world(ShowBase):
             print("colliding") # debug, makes the game laggy
         interior = entry.getInteriorPoint(entry.getIntoNodePath()) # default
         surface = entry.getSurfacePoint(entry.getIntoNodePath())
-        print((interior - surface).length()) # debug
+        print((interior - surface).length()) # debug, doesn't slow the game down too much so I haven't removed it
+
         if (interior - surface).length() >= 2*sum(self.bodies[f_pos].scale)*self.u_radius/3:
             if self.state[2]==self.collision_solids[f_pos].NodePath:
                 self.state[1]='free'
@@ -514,23 +580,25 @@ class world(ShowBase):
         file.close()
     
     def Sound_Mngr(self,task):
-        if self.sounds[self.current_playing].length()-self.sounds[self.current_playing].getTime()==0: #could have just used not()
+        if self.current_song.length()-self.current_song.getTime()==0: #could have just used not()
             self.current_playing=random.choice(list(range(0,self.current_playing))+list(range(self.current_playing+1,len(self.sounds))))
-            self.sounds[self.current_playing].play()
+            self.current_song=self.loader.loadSfx(self.sounds[self.current_playing])
+            self.current_song.play()
+            print(self.current_playing)
         return task.cont
 
     def collision_gfx(self,points,Rf,Ri): # collision animation calculations
         # section size calculation
         # we know the depth of penetration (no silly jokes please), which allows us, knowing the radius of each body, 
         # to calculate the radius of the section (I've got no idea how to say that in correct english)
-        # the display of the particles all over this circle will be a piece of cake (at least I hope so)
+        # the display of the particles all over this circle will be a piece of cake (at least I hope so)  - edit - it wasn't
         # see documents in the screenshot folder for more informations about the maths
         interior,surface=points[0],points[1]
         p=(interior - surface).length()
         p2=(p**2-2*Ri*p)/(2*Ri-2*p-2*Rf)
         p1=p-p2
         # now we know everything about our impact section (the circle that defines the contact between the two bodies)
-        # we just have to find the coord of the circle's center 
+        # we just have to find the coord of the circle's center: we will take the surfacepoint impact point
          
         return 0
 
@@ -569,6 +637,10 @@ class world(ShowBase):
         else:
             a=1 # indentation (temporary)
             #put your mouse detection stuff here
+            # menu stuff
+            # menu stuff
+            # please use directGui for that purpose (better rendering performances)
+            # the menu doesn't actually work, as the whole clicking reaction routine is not implemented
         return None
     
     def draw_menu(self):
@@ -644,6 +716,7 @@ class world(ShowBase):
             # focus_point coordinates modifier code here:
             if self.state==['running','free',None]:
                 self.cam_Hpr[0]-=x*self.sensitivity_x # the - fixes a bug I can't solve
+                # sensitivity is a coefficient used for mouse displacement routines
                 self.cam_Hpr[1]+=y*self.sensitivity_y # those formulas do not work when theta (self.cam_Hpr[2]) changes 
                 self.rotate_camera()
                 self.center_mouse()
