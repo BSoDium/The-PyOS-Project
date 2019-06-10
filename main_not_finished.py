@@ -6,6 +6,7 @@ try:
     from panda3d.core import *
     from direct.showbase import DirectObject # event handling
     from direct.gui.OnscreenText import OnscreenText
+    from direct.showbase.DirectObject import DirectObject
     from direct.gui.DirectGui import *
     from direct.filter.CommonFilters import CommonFilters
     from direct.gui.OnscreenImage import OnscreenImage
@@ -31,6 +32,18 @@ loadPrcFileData('','multisamples 2')
 SKYBOX='sky'
 BLUR=False # debug
 MAINDIR=Filename.fromOsSpecific(os.getcwd())
+
+class state(DirectObject):
+    def __init__(self):
+        super().__init__()
+        self.root_node=NodePath('State Root')
+        self.root_node.reparentTo(base.render)
+        return None
+    
+    def cleanup(self):
+        self.ignoreAll()
+        self.root_node.remove_node()
+        self.root_node=None
 
 class body:
     def __init__(self):
@@ -136,6 +149,17 @@ class world(ShowBase):
         # ------------------------------- End of parameter variables (sry for the mess) --------------------------------------------
         
 
+        self.Game_state=state()
+
+        # insert menu routine here
+        
+
+        
+        self.loadgame()
+        
+
+
+    def loadgame(self):
         # Mouse parameters 
         self.hidden_mouse=True
         wp = WindowProperties()
@@ -232,7 +256,7 @@ class world(ShowBase):
             if not self.debug:
                 self.filters.set_gamma_adjust(1.0) # can be usefull
                 self.filters.set_bloom(intensity=1,size="medium")
-                render.setAntialias(AntialiasAttrib.MAuto)
+                self.Game_state.root_node.setAntialias(AntialiasAttrib.MAuto)
             
 
             for c in self.bodies: # loading and displaying the preloaded planets and bodies
@@ -244,7 +268,7 @@ class world(ShowBase):
                     if BLUR: self.filters.setCartoonInk()
                 
                 for u in range(0,len(c.filelist),2): # loading each sub-file
-                    c.filelist[u].reparentTo(self.render)
+                    c.filelist[u].reparentTo(self.Game_state.root_node)
                     c.filelist[u].setScale(tuple(c.scale))
                     c.filelist[u].setPos(tuple(c.position))
                     if u==0 and not(c.is_lightSource):
@@ -267,18 +291,18 @@ class world(ShowBase):
                 print("placing body: done")
                 if c.is_lightSource:
                     self.light_Mngr.append([PointLight(c.id+"_other")])
-                    self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
+                    self.light_Mngr[len(self.light_Mngr)-1].append(self.Game_state.root_node.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
                     self.light_Mngr[len(self.light_Mngr)-1][1].setPos(tuple(c.position))
                     ''' # shadow stuff
                     self.light_Mngr[len(self.light_Mngr)-1][1].node().setShadowCaster(True)
                     self.light_Mngr[len(self.light_Mngr)-1][1].node().getLens().setFov(40)
                     self.light_Mngr[len(self.light_Mngr)-1][1].node().getLens().setNearFar(10, 100)
                     '''
-                    render.setLight(self.light_Mngr[len(self.light_Mngr)-1][1]) 
+                    self.Game_state.root_node.setLight(self.light_Mngr[len(self.light_Mngr)-1][1]) 
 
                     self.light_Mngr.append([AmbientLight(c.id+"_self")])
                     self.light_Mngr[len(self.light_Mngr)-1][0].setColorTemperature(3000)
-                    self.light_Mngr[len(self.light_Mngr)-1].append(render.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
+                    self.light_Mngr[len(self.light_Mngr)-1].append(self.Game_state.root_node.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
                     for u in range(0,len(c.filelist),2):
                         c.filelist[u].setLight(self.light_Mngr[len(self.light_Mngr)-1][1])
                     print("lights: done")
@@ -286,17 +310,17 @@ class world(ShowBase):
                 print("loaded new body, out: done")
             if SKYBOX=='sky':
                 self.isphere.setTexGen(TextureStage.getDefault(), TexGenAttrib.MWorldCubeMap)  # *takes a deep breath* cubemap stuff !
-                self.isphere.setTexProjector(TextureStage.getDefault(), render, self.isphere)
+                self.isphere.setTexProjector(TextureStage.getDefault(), self.Game_state.root_node, self.isphere)
                 self.isphere.setTexPos(TextureStage.getDefault(), 0, 0, 0)
                 self.isphere.setTexScale(TextureStage.getDefault(), .5) # that's a thing...
                 self.isphere.setTexture(self.tex)# Create some 3D texture coordinates on the sphere. For more info on this, check the Panda3D manual.
                 self.isphere.setLightOff()
                 self.isphere.setScale(10000) #hope this is enough
-                self.isphere.reparentTo(self.render)
+                self.isphere.reparentTo(self.Game_state.root_node)
             elif SKYBOX=='arena':
                 self.box.setPos(0,0,0)
                 self.box.setScale(100)
-                self.box.reparentTo(self.render)
+                self.box.reparentTo(self.Game_state.root_node)
             # collision traverser and other collision stuff # that's super important, and super tricky to explain so just check the wiki
             self.ctrav = CollisionTraverser()
             self.queue = CollisionHandlerQueue()
@@ -305,14 +329,14 @@ class world(ShowBase):
             # the traverser will be automatically updated, no need to repeat this every frame
             # debugging only
             if self.debug:
-                self.ctrav.showCollisions(render) 
+                self.ctrav.showCollisions(self.Game_state.root_node) 
             # play a random music
             self.current_playing=random.randint(0,len(self.sounds)-1)
             self.current_song=self.loader.loadSfx(self.sounds[self.current_playing])
             self.current_song.play()
 
             # task manager stuff comes here
-            self.taskMgr.add(self.intro_loop,'showIntroPic')
+            self.intro_loop()
         except:
             sys.exit(":( something went wrong: files could not be loaded")
         '''
@@ -356,7 +380,7 @@ class world(ShowBase):
                 axis[c].drawTo(coord[c])
                 axis[c].setThickness(3)
                 axis[c].setColor(tuple([coord[c][u]*255 for u in range(len(coord[c]))] +[True]))
-                NodePath(axis[c].create()).reparent_to(render)
+                NodePath(axis[c].create()).reparent_to(self.Game_state.root_node)
 
         # camera positionning -------
         self.focus_point=[0,0,0] # point focused: can become a body's coordinates if the user tells the program to do so
@@ -387,25 +411,26 @@ class world(ShowBase):
         
         return None
 
+
+
+
+    
     def showsimpletext(self,content,pos,scale,bg,fg): #shows a predefined, basic text on the screen (variable output only)
         return OnscreenText(text=content,pos=pos,scale=scale,bg=bg,fg=fg)
     
-    def intro_loop(self,task):
-        if not(task.time):
-            self.screen_fill=OnscreenImage(image=str(MAINDIR)+"/Engine/main_page.png",pos = (0, 0, 0),scale=(1.77777778,1,1))
-        elif task.time>3.5:
-            self.screen_fill.destroy()
-            self.taskMgr.add(self.mouse_check,'mousePositionTask')
-            self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
-            self.taskMgr.add(self.Sound_Mngr,'MusicHandle')
-            self.taskMgr.add(self.camera_update,'cameraPosition')
-            self.taskMgr.remove('showIntroPic')
-            return None
-        return task.cont
+    def intro_loop(self):
+        # self.screen_fill=OnscreenImage(image=str(MAINDIR)+"/Engine/main_page.png",pos = (0, 0, 0),scale=(1.77777778,1,1))
+        # self.screen_fill.destroy()
+        self.taskMgr.add(self.mouse_check,'mousePositionTask')
+        self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
+        self.taskMgr.add(self.Sound_Mngr,'MusicHandle')
+        self.taskMgr.add(self.camera_update,'cameraPosition')
+        self.taskMgr.remove('showIntroPic')
+        return None
     
     def placement_Mngr(self,task): # main game mechanics, frame updating function (kinda, all pausing and menu functions must be applied here
         if self.state[0]=='running' or not task.time:
-            self.ctrav.traverse(render)
+            self.ctrav.traverse(self.Game_state.root_node)
             #self.queue = CollisionHandlerQueue() # update the collision queue
             brakeforce=[0 for n in range(len(self.bodies))] # create an empty brakeforce list
             if self.queue.getNumEntries():
@@ -425,7 +450,7 @@ class world(ShowBase):
                     self.particle.add_particle(temp1[self.stored_collision_count:len(temp1)])
                     b=len(temp1[self.stored_collision_count:len(temp1)])
                     for x in temp1[self.stored_collision_count:len(temp1)]:
-                        self.particle.activate(x.getIntoNodePath().getParent(),render)
+                        self.particle.activate(x.getIntoNodePath().getParent(),self.Game_state.root_node)
                 self.stored_collision_count=len(temp1) #else do nothing
                 for c in range(0,len(temp1),2): 
                     entry=temp1[c]
@@ -551,8 +576,8 @@ class world(ShowBase):
     def momentum_transfer(self,f_pos,i_pos,entry,inverted):
         if self.debug:
             print("colliding") # debug, makes the game laggy (only activated when the self.debug var is on)
-        interior = entry.getInteriorPoint(render) # default
-        surface = entry.getSurfacePoint(render)
+        interior = entry.getInteriorPoint(self.Game_state.root_node) # default
+        surface = entry.getSurfacePoint(self.Game_state.root_node)
         print((interior - surface).length()) # debug, doesn't slow the game down too much so I haven't removed it
 
 
@@ -583,7 +608,7 @@ class world(ShowBase):
             self.collision_solids=self.collision_solids[:f_pos]+self.collision_solids[f_pos+1:len(self.collision_solids)]
             # just a quick test
             if self.debug:
-                self.ctrav.showCollisions(render) 
+                self.ctrav.showCollisions(self.Game_state.root_node) 
             if self.debug:
                 print("planet destroyed")
         return interior,surface # used for the collision gfx calculations
@@ -591,7 +616,7 @@ class world(ShowBase):
     def printScene(self):  #debug
         file=open("scenegraph.txt","a")
         ls = LineStream()
-        render.ls(ls)
+        self.Game_state.root_node.ls(ls)
         while ls.isTextAvailable():
             file.write(ls.getLine())
             file.write("\n")
@@ -772,8 +797,8 @@ class world(ShowBase):
     def update_particle_pos(self): # harder than I thought
         for x in range(len(self.particle.particle_list)):
             a=[i.getIntoNodePath() for i in self.queue.getEntries()].index(self.particle.particle_list[x][1]) # finding the intonodepath inside self.queue.getEntries()
-            self.particle.particle_list[x][0].setPos(self.queue.getEntries()[a].getSurfacePoint(render)) # all particles are being displaced to the position of the surface impact point
-            tempvar=self.queue.getEntries()[a].getSurfacePoint(render) - self.queue.getEntries()[a].getIntoNodePath().getParent().getPos()
+            self.particle.particle_list[x][0].setPos(self.queue.getEntries()[a].getSurfacePoint(self.Game_state.root_node)) # all particles are being displaced to the position of the surface impact point
+            tempvar=self.queue.getEntries()[a].getSurfacePoint(self.Game_state.root_node) - self.queue.getEntries()[a].getIntoNodePath().getParent().getPos()
             H,P,R=-atan(tempvar[0]/tempvar[1])*180/pi+180,(-atan(tempvar[2]/tempvar[1])+pi/2)*180/pi,0
             self.particle.particle_list[x][0].setHpr(H,P,R)
         # self.queue.getEntries()[a].getIntoNodePath().getParent().getPos()
