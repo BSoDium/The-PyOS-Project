@@ -8,6 +8,8 @@ setup(
                 '**/*.png',
                 '**/*.jpg',
                 '**/*.egg',
+                '**/*.ptf',
+                '**/*.mp3'
             ],
             'gui_apps': {
                 'PyOS': 'main.py',
@@ -17,6 +19,8 @@ setup(
             'plugins': [
                 'pandagl',
                 'p3openal_audio',
+                'p3ffmpeg',
+                'p3ptloader',
             ],
         }
     }
