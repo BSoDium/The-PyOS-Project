@@ -1,0 +1,87 @@
+<Comment> {
+  "egg-texture-cards -o quit.egg -p 700,60 Quit.png Quit_on.png Quit_push.png"
+}
+<Texture> Quit_push {
+  Quit_push.png
+}
+<Texture> Quit_on {
+  Quit_on.png
+}
+<Texture> Quit {
+  Quit.png
+}
+<Group> {
+  <Switch> { 1 }
+  <Scalar> fps { 2 }
+  <VertexPool> vpool {
+    <Vertex> 0 {
+      -0.5 0.5 0
+      <UV> { 0 1 }
+    }
+    <Vertex> 1 {
+      -0.5 -0.5 0
+      <UV> { 0 0 }
+    }
+    <Vertex> 2 {
+      0.5 -0.5 0
+      <UV> { 1 0 }
+    }
+    <Vertex> 3 {
+      0.5 0.5 0
+      <UV> { 1 1 }
+    }
+    <Vertex> 4 {
+      -0.5 0.5 0
+      <UV> { 0 1 }
+    }
+    <Vertex> 5 {
+      -0.5 -0.5 0
+      <UV> { 0 0 }
+    }
+    <Vertex> 6 {
+      0.5 -0.5 0
+      <UV> { 1 0 }
+    }
+    <Vertex> 7 {
+      0.5 0.5 0
+      <UV> { 1 1 }
+    }
+    <Vertex> 8 {
+      -0.5 0.5 0
+      <UV> { 0 1 }
+    }
+    <Vertex> 9 {
+      -0.5 -0.5 0
+      <UV> { 0 0 }
+    }
+    <Vertex> 10 {
+      0.5 -0.5 0
+      <UV> { 1 0 }
+    }
+    <Vertex> 11 {
+      0.5 0.5 0
+      <UV> { 1 1 }
+    }
+  }
+  <Group> Quit {
+    <Polygon> {
+      <RGBA> { 1 1 1 1 }
+      <TRef> { Quit }
+      <VertexRef> { 0 1 2 3 <Ref> { vpool } }
+    }
+  }
+  <Group> Quit_on {
+    <Polygon> {
+      <RGBA> { 1 1 1 1 }
+      <TRef> { Quit_on }
+      <VertexRef> { 4 5 6 7 <Ref> { vpool } }
+    }
+  }
+  <Group> Quit_push {
+    <Polygon> {
+      <RGBA> { 1 1 1 1 }
+      <TRef> { Quit_push }
+      <VertexRef> { 8 9 10 11 <Ref> { vpool } }
+    }
+  }
+}
