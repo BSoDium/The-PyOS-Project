@@ -1,5 +1,5 @@
 from math import *
-import os,sys,random
+import os,sys,random,time
 try:
     from direct.showbase.ShowBase import ShowBase
     from direct.task import Task
@@ -114,7 +114,7 @@ class particle:
         try:
             for x in datalist:
                 self.particle_list.append([ParticleEffect(),x.getIntoNodePath()]) # by default, there is only one particle per planet, more can be added in the sub-list
-                self.particle_list[len(self.particle_list)-1][0].loadConfig(MAINDIR+self.config_path)
+                self.particle_list[len(self.particle_list)-1][0].loadConfig(str(MAINDIR)+self.config_path)
         except: print('[WARNING]: incorrect datalist')
         return None
             
@@ -154,32 +154,49 @@ class world(ShowBase):
         
 
         self.Game_state=state()
+        self.taskMgr.add(self.wait,'wait_task')
+        self.setBackgroundColor(0,0,0)
+        
+    def wait(self,task):
+        if not(task.time):
+            self.screen_fill=OnscreenImage(image=str(MAINDIR)+"/Engine/main_page.png",pos = (0, 0, 0),scale=(1.77777778,1,1))
+        elif task.time>4:
+            self.taskMgr.remove('wait_task')
+            self.screen_fill.destroy()
+            self.menu()
+            return None
+        return task.cont
 
-        # insert menu routine here
+
+    def menu(self):
+        # loading time
+        # music
+        self.menu_music=self.loader.loadSfx(str(MAINDIR)+'/Sound/deadmau5-cabin.mp3')
+        self.menu_music.setLoop(True)
+        self.menu_music.play()
         # filters
         self.filters = CommonFilters(base.win, base.cam)
         self.Game_state.root_node.setAntialias(AntialiasAttrib.MAuto)
         def quit():
             sys.exit(0)
-        maps_start=loader.loadModel(MAINDIR+'/Engine/start.egg')
-        maps_quit=loader.loadModel(MAINDIR+'/Engine/quit.egg')
-        self.start_button=DirectButton(pos=(0,0.35,0.60),frameColor=(0,0,0,0),scale=(0.4,0.4,0.1368),geom=(maps_start.find('**/Start'),maps_start.find('**/Start_push'),maps_start.find('**/Start_on'),maps_start.find('**/Start')),command=self.goto_game)
+        maps_start=loader.loadModel(str(MAINDIR)+'/Engine/start.egg')
+        maps_quit=loader.loadModel(str(MAINDIR)+'/Engine/quit.egg')
+        self.start_button=DirectButton(pos=(0,0.35,0.60),frameColor=(0,0,0,0),scale=(0.4,0.4,0.1368),geom=(maps_start.find('**/Start'),maps_start.find('**/Start_push'),maps_start.find('**/Start_on'),maps_start.find('**/Start')),command=self.loadgame)
         self.quit_button=DirectButton(pos=(0,0.35,0.45),frameColor=(0,0,0,0),scale=(0.4,0.4,0.1368),geom=(maps_quit.find('**/Quit'),maps_quit.find('**/Quit_push'),maps_quit.find('**/Quit_on'),maps_quit.find('**/Quit')),command=quit)
         self.title_pic=OnscreenImage(image=str(MAINDIR)+'/Engine/title.png',pos=(0,0.35,0.80), scale=(1,1,0.0504))
         self.title_pic.setTransparency(TransparencyAttrib.MAlpha)
 
-        self.moon=self.loader.loadModel(MAINDIR+"/Engine/Icy.egg")
+        self.moon=self.loader.loadModel(str(MAINDIR)+"/Engine/Icy.egg")
         self.moon.setScale(9,9,9)
         self.moon.setPos(0,-63,-46.5)
         self.moon.reparentTo(self.Game_state.root_node)
-        self.intro_planet=self.loader.loadModel(MAINDIR+"/Engine/Earth2.egg")
+        self.intro_planet=self.loader.loadModel(str(MAINDIR)+"/Engine/Earth2.egg")
         self.intro_planet.setPos(0,0,0)
         self.intro_planet.reparentTo(self.Game_state.root_node)
         self.intro_planet.setHpr(-110,0,0)
         self.cam.setPos(0,-70,0)
 
         self.disable_mouse()
-        self.setBackgroundColor(0,0,0)
         # lighting
         dlight=self.Game_state.root_node.attachNewNode(DirectionalLight('menu_plight'))
         dlight.setHpr(0,-40,0)
@@ -193,21 +210,16 @@ class world(ShowBase):
         self.intro_planet.setHpr(self.intro_planet,(0.1,0,0))
         self.moon.setHpr(self.moon,(0,0.01,0))
         return task.cont
-        
-    def goto_game(self):
-        self.taskMgr.remove('rotationtask')
-        self.taskMgr.add(self.display_intro,'temptask',uponDeath=self.loadgame)
-        self.screen_fill=OnscreenImage(image=str(MAINDIR)+"/Engine/main_page.png",pos = (0, 0, 0),scale=(1.77777778,1,1))
+    
+    # end of menu subfunctions
 
-    def display_intro(self,task):
-        if task.time>0.01: # wait some time
-            return task.done
-        else:
-            return task.cont
 
-    def loadgame(self,task):
+    def loadgame(self):
         # transition phase
+        self.menu_music.setLoop(False)
+        self.menu_music.stop()
 
+        self.taskMgr.remove('rotationtask')
         self.cam.setPos(0,0,0)
         self.Game_state.cleanup()
         self.start_button.hide()
@@ -227,38 +239,37 @@ class world(ShowBase):
         # preparing the menu text list:
         self.menu_text=[]
         self.menu_text.append(self.showsimpletext('The PyOS project V0.10 alpha',(0,0.4),(0.07,0.07),None,(1,1,1,True)))
-        self.menu_text.append(self.showsimpletext('Resume',(0,0.3),(0.06,0.06),None,(1,1,1,True)))
-        self.menu_text.append(self.showsimpletext('Quit',(0,0.2),(0.06,0.06),None,(1,1,1,True)))
+        self.menu_text.append(self.showsimpletext('Game Paused',(0,0.3),(0.06,0.06),None,(1,1,1,True)))
 
         # btw I found something about energy transmission through thermal radiation. I think it uses some Boltzmann formula stuff. Link here:
         # https://fr.wikibooks.org/wiki/Plan%C3%A9tologie/La_temp%C3%A9rature_de_surface_des_plan%C3%A8tes#Puissance_re%C3%A7ue_par_la_Terre
 
         # Defining important data lists
         # music imports (paths)
-        self.sounds=[MAINDIR+"/Sound/001.mp3",
-        MAINDIR+"/Sound/Blazing-Stars.mp3",
-        MAINDIR+"/Sound/Cold-Moon.mp3",
-        MAINDIR+"/Sound/Light-Years_v001.mp3",
-        MAINDIR+"/Sound/The-Darkness-Below.mp3",
-        MAINDIR+"/Sound/Retro-Sci-Fi-Planet.mp3",
-        MAINDIR+"/Sound/droid-bishop-nightland.mp3",
-        MAINDIR+"/Sound/interstellar-ost-03-dust-by-hans-zimmer.mp3",
-        MAINDIR+"/Sound/interstellar-ost-04-day-one-by-hans-zimmer.mp3",
-        MAINDIR+"/Sound/ascendant-remains-2015.mp3",
-        MAINDIR+"/Sound/droid-bishop-nightland.mp3",
-        MAINDIR+"/Sound/john-carpenter-utopian-facade-official-music-video.mp3",
-        MAINDIR+"/Sound/stranger-things-2-eulogy.mp3",
-        MAINDIR+"/Sound/interstellar-ost-07-the-wormhole-by-hans-zimmer.mp3"] 
+        self.sounds=[str(MAINDIR)+"/Sound/001.mp3",
+        str(MAINDIR)+"/Sound/Blazing-Stars.mp3",
+        str(MAINDIR)+"/Sound/Cold-Moon.mp3",
+        str(MAINDIR)+"/Sound/Light-Years_v001.mp3",
+        str(MAINDIR)+"/Sound/The-Darkness-Below.mp3",
+        str(MAINDIR)+"/Sound/Retro-Sci-Fi-Planet.mp3",
+        str(MAINDIR)+"/Sound/droid-bishop-nightland.mp3",
+        str(MAINDIR)+"/Sound/interstellar-ost-03-dust-by-hans-zimmer.mp3",
+        str(MAINDIR)+"/Sound/interstellar-ost-04-day-one-by-hans-zimmer.mp3",
+        str(MAINDIR)+"/Sound/ascendant-remains-2015.mp3",
+        str(MAINDIR)+"/Sound/droid-bishop-nightland.mp3",
+        str(MAINDIR)+"/Sound/john-carpenter-utopian-facade-official-music-video.mp3",
+        str(MAINDIR)+"/Sound/stranger-things-2-eulogy.mp3",
+        str(MAINDIR)+"/Sound/interstellar-ost-07-the-wormhole-by-hans-zimmer.mp3"] 
         
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
         self.data=[
-        [0,0,0,0,0.003,0,0.30,0.30,0.30,100000.00,True,[self.loader.loadModel(MAINDIR+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(MAINDIR+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"low_poly_planet01",False,0.1]
-        ,[10,0,0,0,0.003,0,0.05,0.05,0.05,20.00,True,[self.loader.loadModel(MAINDIR+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia_modified",False,0.1]
-        ,[0,70,10,0,0.005,0,0.1,0.1,0.1,40.00,True,[self.loader.loadModel(MAINDIR+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False,1]
-        ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(MAINDIR+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(MAINDIR+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True,0.1]
-        ,[-100,50,70,0,0,0.003,0.15,0.15,0.15,1000.00,True,[self.loader.loadModel(MAINDIR+"/Engine/Earth2.egg"),(-0.1,0,0),self.loader.loadModel(MAINDIR+"/Engine/Earth2_atm.egg"),(-0.15,0,0)],"big_fucking_planet",False,0.1]
-        #,[200,0,0,-0.00001,0,0.001,0.1,0.1,0.1,100000,False,[self.loader.loadModel(MAINDIR+"/Engine/starbird.egg"),(0,0.01,0)],"spaceship",False,0]
+        [0,0,0,0,0.003,0,0.30,0.30,0.30,100000.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"low_poly_planet01",False,0.1]
+        ,[10,0,0,0,0.003,0,0.05,0.05,0.05,20.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia_modified",False,0.1]
+        ,[0,70,10,0,0.005,0,0.1,0.1,0.1,40.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False,1]
+        ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True,0.1]
+        ,[-100,50,70,0,0,0.003,0.15,0.15,0.15,1000.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/Earth2.egg"),(-0.1,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/Earth2_atm.egg"),(-0.15,0,0)],"big_fucking_planet",False,0.1]
+        ,[200,0,0,-0.001,0,0.01,0.1,0.1,0.1,100000,False,[self.loader.loadModel(MAINDIR+"/Engine/realistic_asteroid.egg"),(0,0.01,0)],"spaceship",False,0]
         # insert your 3d models here, following the syntax (this is the default scene that will be loaded on startup)
         ] 
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource,brakeforce] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list (first file must be the ground, the others are atmosphere models)
@@ -289,10 +300,10 @@ class world(ShowBase):
 
         # non-body type structures loading
         if SKYBOX=='sky':
-            self.isphere=self.loader.loadModel(MAINDIR+"/Engine/InvertedSphere.egg") #loading skybox structure
-            self.tex=loader.loadCubeMap(MAINDIR+'/Engine/Skybox4/skybox_#.png')
+            self.isphere=self.loader.loadModel(str(MAINDIR)+"/Engine/InvertedSphere.egg") #loading skybox structure
+            self.tex=loader.loadCubeMap(str(MAINDIR)+'/Engine/Skybox4/skybox_#.png')
         elif SKYBOX=='arena':
-            self.box=self.loader.loadModel(MAINDIR+"/Engine/arena.egg") 
+            self.box=self.loader.loadModel(str(MAINDIR)+"/Engine/arena.egg") 
         
         #load shaders (optionnal)
         '''
@@ -304,7 +315,7 @@ class world(ShowBase):
         
         # see https://www.panda3d.org/manual/?title=Collision_Solids for further collision interaction informations
         base.graphicsEngine.openWindows()
-        try:
+        if 1:
             print('\n[Loader manager]:\n')
             '''
             self.filters.setBlurSharpen(amount=0) # just messing around
@@ -318,7 +329,7 @@ class world(ShowBase):
                 
                 if c.is_lightSource and not self.debug:
                     # VM filtering
-                    self.filters.setVolumetricLighting(c.filelist[u],numsamples=50,density=0.5,decay=0.95,exposure=0.035) 
+                    self.filters.setVolumetricLighting(c.filelist[0],numsamples=50,density=0.5,decay=0.95,exposure=0.035) 
                     #c.filelist[u].set_shader(sun_shader)
                     if BLUR: self.filters.setCartoonInk()
                 
@@ -361,6 +372,9 @@ class world(ShowBase):
                     for u in range(0,len(c.filelist),2):
                         c.filelist[u].setLight(self.light_Mngr[len(self.light_Mngr)-1][1])
                     print("lights: done")
+                else:
+                    self.light_Mngr.append([]) #create an empty list, so that the coordinates of the data in the list is the same as in self.bodies (easier for further analysis and potential deletion)
+                    self.light_Mngr.append([])
                 
                 print("loaded new body, out: done")
             if SKYBOX=='sky':
@@ -392,8 +406,10 @@ class world(ShowBase):
 
             # task manager stuff comes here
             self.intro_loop()
+        '''
         except:
             sys.exit(":( something went wrong: files could not be loaded")
+        '''
         
         '''
         self.showsimpletext("All modules loaded, simulation running",(-1.42,0.95),(0.04,0.04),None,(1,1,1,True))
@@ -463,7 +479,7 @@ class world(ShowBase):
         self.pointerNode.addSolid(self.cursor_ray)
         self.ctrav.add_collider(self.pointerNP,self.queue)
 
-        self.screen_fill.destroy() # delete the displayed picture
+        #self.screen_fill.destroy() # delete the displayed picture
         return None
 
 
@@ -573,7 +589,7 @@ class world(ShowBase):
                     c.filelist[u].setPos(tuple(c.position))    
             if c.is_lightSource:
                 self.light_Mngr[count][1].setPos(tuple(c.position))
-                count+=2 #we have to change the position of the pointlight, not the ambientlight
+            count+=2
         return 0
     
     def camera_update(self,task):
@@ -651,7 +667,8 @@ class world(ShowBase):
 
             self.particle.deactivate(self.collision_solids[f_pos].NodePath.getParent())
             self.particle.deactivate(self.collision_solids[i_pos].NodePath.getParent())
-
+            if self.bodies[f_pos].is_lightSource:
+                self.filters.delVolumetricLighting()
             # scale updating ()
             ''' temporarly removed
             for c in range(0,len(self.bodies[i_pos].filelist),2):
@@ -660,6 +677,13 @@ class world(ShowBase):
             # deleting the destroyed planet's data
             self.bodies=self.bodies[:f_pos]+self.bodies[f_pos+1:len(self.bodies)]
             self.collision_solids=self.collision_solids[:f_pos]+self.collision_solids[f_pos+1:len(self.collision_solids)]
+            # update the light list
+            #if self.bodies[f_pos].is_lightsource:
+                #self.light_Mngr[2*f_pos][1].node.destroy()
+                #self.light_Mngr[2*f_pos+1][1].node.destroy()
+            self.light_Mngr=self.light_Mngr[:2*f_pos]+self.light_Mngr[2*f_pos+2:len(self.light_Mngr)]
+            
+            
             # just a quick test
             if self.debug:
                 self.ctrav.showCollisions(self.Game_state.root_node) 
