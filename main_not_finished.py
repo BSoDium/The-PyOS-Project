@@ -44,6 +44,10 @@ class state(DirectObject):
         self.ignoreAll()
         self.root_node.remove_node()
         self.root_node=None
+        self.root_node=NodePath('State Root')
+        self.root_node.reparentTo(base.render)
+        return None
+
 
 class body:
     def __init__(self):
@@ -152,14 +156,68 @@ class world(ShowBase):
         self.Game_state=state()
 
         # insert menu routine here
-        
+        # filters
+        self.filters = CommonFilters(base.win, base.cam)
+        self.Game_state.root_node.setAntialias(AntialiasAttrib.MAuto)
+        def quit():
+            sys.exit(0)
+        maps_start=loader.loadModel(MAINDIR+'/Engine/start.egg')
+        maps_quit=loader.loadModel(MAINDIR+'/Engine/quit.egg')
+        self.start_button=DirectButton(pos=(0,0.35,0.60),frameColor=(0,0,0,0),scale=(0.4,0.4,0.1368),geom=(maps_start.find('**/Start'),maps_start.find('**/Start_push'),maps_start.find('**/Start_on'),maps_start.find('**/Start')),command=self.goto_game)
+        self.quit_button=DirectButton(pos=(0,0.35,0.45),frameColor=(0,0,0,0),scale=(0.4,0.4,0.1368),geom=(maps_quit.find('**/Quit'),maps_quit.find('**/Quit_push'),maps_quit.find('**/Quit_on'),maps_quit.find('**/Quit')),command=quit)
+        self.title_pic=OnscreenImage(image=str(MAINDIR)+'/Engine/title.png',pos=(0,0.35,0.80), scale=(1,1,0.0504))
+        self.title_pic.setTransparency(TransparencyAttrib.MAlpha)
+
+        self.moon=self.loader.loadModel(MAINDIR+"/Engine/Icy.egg")
+        self.moon.setScale(9,9,9)
+        self.moon.setPos(0,-63,-46.5)
+        self.moon.reparentTo(self.Game_state.root_node)
+        self.intro_planet=self.loader.loadModel(MAINDIR+"/Engine/Earth2.egg")
+        self.intro_planet.setPos(0,0,0)
+        self.intro_planet.reparentTo(self.Game_state.root_node)
+        self.intro_planet.setHpr(-110,0,0)
+        self.cam.setPos(0,-70,0)
+
+        self.disable_mouse()
+        self.setBackgroundColor(0,0,0)
+        # lighting
+        dlight=self.Game_state.root_node.attachNewNode(DirectionalLight('menu_plight'))
+        dlight.setHpr(0,-40,0)
+        self.Game_state.root_node.setLight(dlight)
+
+        self.task_mgr.add(self.rotate,'rotationtask') # penser a l'enlever
 
         
-        self.loadgame()
+    
+    def rotate(self,task):
+        self.intro_planet.setHpr(self.intro_planet,(0.1,0,0))
+        self.moon.setHpr(self.moon,(0,0.01,0))
+        return task.cont
+        
+    def goto_game(self):
+        self.taskMgr.remove('rotationtask')
+        self.taskMgr.add(self.display_intro,'temptask',uponDeath=self.loadgame)
+        self.screen_fill=OnscreenImage(image=str(MAINDIR)+"/Engine/main_page.png",pos = (0, 0, 0),scale=(1.77777778,1,1))
+
+    def display_intro(self,task):
+        if task.time>0.01: # wait some time
+            return task.done
+        else:
+            return task.cont
+
+    def loadgame(self,task):
+        # transition phase
+
+        self.cam.setPos(0,0,0)
+        self.Game_state.cleanup()
+        self.start_button.hide()
+        self.quit_button.hide()
+        self.title_pic.hide()
+        
         
 
+        # end of transition phase
 
-    def loadgame(self):
         # Mouse parameters 
         self.hidden_mouse=True
         wp = WindowProperties()
@@ -248,15 +306,12 @@ class world(ShowBase):
         base.graphicsEngine.openWindows()
         try:
             print('\n[Loader manager]:\n')
-            # filters predefining
-            self.filters = CommonFilters(base.win, base.cam)
             '''
             self.filters.setBlurSharpen(amount=0) # just messing around
             '''
             if not self.debug:
                 self.filters.set_gamma_adjust(1.0) # can be usefull
                 self.filters.set_bloom(intensity=1,size="medium")
-                self.Game_state.root_node.setAntialias(AntialiasAttrib.MAuto)
             
 
             for c in self.bodies: # loading and displaying the preloaded planets and bodies
@@ -339,6 +394,7 @@ class world(ShowBase):
             self.intro_loop()
         except:
             sys.exit(":( something went wrong: files could not be loaded")
+        
         '''
         self.showsimpletext("All modules loaded, simulation running",(-1.42,0.95),(0.04,0.04),None,(1,1,1,True))
         self.showsimpletext("PyOS build V0.10",(-1.5,0.90),(0.04,0.04),None,(1,1,1,True))
@@ -368,7 +424,6 @@ class world(ShowBase):
         self.accept('e-up',self.move_camera,[5,False])
         self.keymap=['z',0,'q',0,'s',0,'d',0,'a',0,'e',0,'mouse1',0]
         
-        self.disable_mouse()
         
         if self.debug: 
             # draw axis
@@ -408,7 +463,7 @@ class world(ShowBase):
         self.pointerNode.addSolid(self.cursor_ray)
         self.ctrav.add_collider(self.pointerNP,self.queue)
 
-        
+        self.screen_fill.destroy() # delete the displayed picture
         return None
 
 
@@ -419,8 +474,7 @@ class world(ShowBase):
         return OnscreenText(text=content,pos=pos,scale=scale,bg=bg,fg=fg)
     
     def intro_loop(self):
-        # self.screen_fill=OnscreenImage(image=str(MAINDIR)+"/Engine/main_page.png",pos = (0, 0, 0),scale=(1.77777778,1,1))
-        # self.screen_fill.destroy()
+        
         self.taskMgr.add(self.mouse_check,'mousePositionTask')
         self.taskMgr.add(self.placement_Mngr,'frameUpdateTask')
         self.taskMgr.add(self.Sound_Mngr,'MusicHandle')
