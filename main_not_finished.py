@@ -185,7 +185,12 @@ class world(ShowBase):
         self.quit_button=DirectButton(pos=(0,0.35,0.45),frameColor=(0,0,0,0),scale=(0.4,0.4,0.1368),geom=(maps_quit.find('**/Quit'),maps_quit.find('**/Quit_push'),maps_quit.find('**/Quit_on'),maps_quit.find('**/Quit')),command=quit)
         self.title_pic=OnscreenImage(image=str(MAINDIR)+'/Engine/title.png',pos=(0,0.35,0.80), scale=(1,1,0.0504))
         self.title_pic.setTransparency(TransparencyAttrib.MAlpha)
-
+        self.activity_log=OnscreenImage(image=str(MAINDIR)+'/Engine/activity_log.png',pos=(-1.2,0.35,0.3),scale=(0.375,0.75,0.086775))
+        self.activity_log.setTransparency(TransparencyAttrib.MAlpha)
+        self.activity_log_bg=OnscreenImage(image=str(MAINDIR)+'/Engine/activity_log_bg.png',pos=(-1.2,-0.2,-0.17),scale=(0.5,0.4,0.375))
+        self.activity_log_bg.setTransparency(TransparencyAttrib.MAlpha)
+        # Don't touch the tons of spaces, i didn't understand why i needed so many , but it works
+        self.logs=OnscreenText(text='Version 1.1.0\nAdded Menu\n        Added Particules',pos=(-1.5,0.11,0), scale=(0.05,0.05,0.05),fg=(1,1,1,1))
         self.moon=self.loader.loadModel(str(MAINDIR)+"/Engine/Icy.egg")
         self.moon.setScale(9,9,9)
         self.moon.setPos(0,-63,-46.5)
@@ -274,7 +279,7 @@ class world(ShowBase):
         ] 
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource,brakeforce] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list (first file must be the ground, the others are atmosphere models)
         #id: str - lightsource: boolean -
-        #if you want the hitbox to be correctly scaled, and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
+        #if you want the hitbox to be correctly scaled,and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
         
         # create the real data list, the one used by the program
         self.bodies=[]
