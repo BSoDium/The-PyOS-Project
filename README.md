@@ -3,8 +3,8 @@ The game mechanics do work, but there is still a lot of work to do (see project 
 Hitboxes are currently being worked on, tests are being made, please be patient. It is possible to import 3d models and test simulations using those, but it is very hard to master though, as I haven't created a syntax guide for users. If you still wish to do so, please contact us by creating a [new issue](https://github.com/the-fancy-corporation/The-PyOS-Project/issues/new/choose)
 
 ### Screenshots
-![here is the current scenery](Screenshots/Annotation 2019-06-02 101439.png)
-![Some other cool shots](Screenshots/Annotation 2019-06-02 101601.png)
+![here is the current scenery](Screenshots/Scrnshot_5.png)
+![Some other cool shots](Screenshots/Scrnshot_6.png)
 
 ## Installation
 Just [download](https://github.com/the-fancy-corporation/The-PyOS-Project/releases/download/v0.10/PyOS.Release.0.10.zip) the latest release, extract the files, and run the **PyOS.exe** file *(if you're using windows, if you have linux or mac, just go to the correct folder)*.
