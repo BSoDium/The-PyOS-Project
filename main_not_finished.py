@@ -187,25 +187,38 @@ class world(ShowBase):
         self.title_pic.setTransparency(TransparencyAttrib.MAlpha)
         self.activity_log=OnscreenImage(image=str(MAINDIR)+'/Engine/activity_log.png',pos=(-1.2,0.35,0.3),scale=(0.375,0.75,0.086775))
         self.activity_log.setTransparency(TransparencyAttrib.MAlpha)
-        self.activity_log_bg=OnscreenImage(image=str(MAINDIR)+'/Engine/activity_log_bg.png',pos=(-1.2,-0.2,-0.17),scale=(0.5,0.4,0.375))
+        self.activity_log_bg=OnscreenImage(image=str(MAINDIR)+'/Engine/activity_log_bg.png',pos=(-1.2,-0.35,-0.3),scale=(0.5,0.4,0.675))
         self.activity_log_bg.setTransparency(TransparencyAttrib.MAlpha)
-        # Don't touch the tons of spaces, i didn't understand why i needed so many , but it works
-        self.logs=OnscreenText(text='Version 1.1.0\nAdded Menu\n        Added Particules',pos=(-1.5,0.11,0), scale=(0.05,0.05,0.05),fg=(1,1,1,1))
+        #spaces compensate the center text effect
+        self.logs=OnscreenText(text='   PyOS v0.10-alpha\n\n                              Added main menu in last update\n                                             Particle support has now become reality\n                                  but still needs some improvement\n\n\n          Feature in progress:\n      collision animation\n\n\nRelease date >>',pos=(-1.5,0.11,0), scale=(0.05,0.05,0.05),fg=(1,1,1,1))
+        self.shrug=OnscreenImage(image=str(MAINDIR)+'/Engine/shrug.png',pos=(-1.55,0.35,-0.5),scale=(0.1,1,0.0317))
+        self.shrug.setTransparency(TransparencyAttrib.MAlpha)
+
+        self.backgrnd=OnscreenImage(image=str(MAINDIR)+'/Engine/Stars.png',scale=(1.78,1,1))
+        self.backgrnd.setHpr(0,0,0)
+        self.backgrnd.reparentTo(self.Game_state.root_node)
+        self.backgrnd.setPos(0,0,0)
         self.moon=self.loader.loadModel(str(MAINDIR)+"/Engine/Icy.egg")
         self.moon.setScale(9,9,9)
         self.moon.setPos(0,-63,-46.5)
         self.moon.reparentTo(self.Game_state.root_node)
-        self.intro_planet=self.loader.loadModel(str(MAINDIR)+"/Engine/Earth2.egg")
+        self.intro_planet=self.loader.loadModel(str(MAINDIR)+"/Engine/tessena.egg")
+        self.intro_planet_atm=self.loader.loadModel(str(MAINDIR)+"/Engine/tessena_atm.egg")
         self.intro_planet.setPos(0,0,0)
+        self.intro_planet_atm.setPos(0,0,0)
         self.intro_planet.reparentTo(self.Game_state.root_node)
+        self.intro_planet_atm.reparentTo(self.Game_state.root_node)
         self.intro_planet.setHpr(-110,0,0)
+        self.intro_planet_atm.setHpr(-110,0,0)
         self.cam.setPos(0,-70,0)
 
         self.disable_mouse()
         # lighting
         dlight=self.Game_state.root_node.attachNewNode(DirectionalLight('menu_plight'))
         dlight.setHpr(0,-40,0)
-        self.Game_state.root_node.setLight(dlight)
+        self.moon.setLight(dlight)
+        self.intro_planet.setLight(dlight)
+        self.intro_planet_atm.setLight(dlight)
 
         self.task_mgr.add(self.rotate,'rotationtask') # penser a l'enlever
 
@@ -213,6 +226,7 @@ class world(ShowBase):
     
     def rotate(self,task):
         self.intro_planet.setHpr(self.intro_planet,(0.1,0,0))
+        self.intro_planet_atm.setHpr(self.intro_planet_atm,(0.07,0,0))
         self.moon.setHpr(self.moon,(0,0.01,0))
         return task.cont
     

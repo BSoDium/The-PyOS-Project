@@ -3,6 +3,7 @@ from direct.particles.ParticleEffect import ParticleEffect
 from panda3d.core import *
 import os
 from math import *
+from direct.gui.OnscreenImage import OnscreenImage
 
 MAINDIR=Filename.fromOsSpecific(os.getcwd())
 class app(ShowBase):
@@ -15,6 +16,11 @@ class app(ShowBase):
         self.planet.reparentTo(render)
         
         self.setBackgroundColor(0.2,0.2,0.2,1)
+
+        self.backgrnd=OnscreenImage(image=str(MAINDIR)+'/Engine/Stars.png',scale=(1.78,1,1))
+        self.backgrnd.reparentTo(render)
+        self.backgrnd.setPos(0,0,0)
+
         self.enableParticles()
         self.testpart=ParticleEffect()
         self.testpart.loadConfig(MAINDIR+'/Engine/destruction_sphere.ptf')
