@@ -237,10 +237,15 @@ class world(ShowBase):
         # transition phase
         self.menu_music.setLoop(False)
         self.menu_music.stop()
-
+        
+        
         self.taskMgr.remove('rotationtask')
         self.cam.setPos(0,0,0)
         self.Game_state.cleanup()
+        self.activity_log.hide()
+        self.activity_log_bg.hide()
+        self.logs.hide()
+        self.shrug.hide()
         self.start_button.hide()
         self.quit_button.hide()
         self.title_pic.hide()
@@ -283,7 +288,7 @@ class world(ShowBase):
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
         self.data=[
-        [0,0,0,0,0.003,0,0.30,0.30,0.30,100000.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"low_poly_planet01",False,0.1]
+        [0,0,0,-0.001,0.005,0,0.30,0.30,0.30,100000.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"low_poly_planet01",False,0.1]
         ,[10,0,0,0,0.003,0,0.05,0.05,0.05,20.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia_modified",False,0.1]
         ,[0,70,10,0,0.005,0,0.1,0.1,0.1,40.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False,1]
         ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True,0.1]
@@ -538,6 +543,8 @@ class world(ShowBase):
                     b=len(temp1[self.stored_collision_count:len(temp1)])
                     for x in temp1[self.stored_collision_count:len(temp1)]:
                         self.particle.activate(x.getIntoNodePath().getParent(),self.Game_state.root_node)
+                elif len(temp1)<self.stored_collision_count:
+                    print('Collision ended')
                 self.stored_collision_count=len(temp1) #else do nothing
                 for c in range(0,len(temp1),2): 
                     entry=temp1[c]

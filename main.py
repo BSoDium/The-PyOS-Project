@@ -185,22 +185,40 @@ class world(ShowBase):
         self.quit_button=DirectButton(pos=(0,0.35,0.45),frameColor=(0,0,0,0),scale=(0.4,0.4,0.1368),geom=(maps_quit.find('**/Quit'),maps_quit.find('**/Quit_push'),maps_quit.find('**/Quit_on'),maps_quit.find('**/Quit')),command=quit)
         self.title_pic=OnscreenImage(image=str(MAINDIR)+'/Engine/title.png',pos=(0,0.35,0.80), scale=(1,1,0.0504))
         self.title_pic.setTransparency(TransparencyAttrib.MAlpha)
+        self.activity_log=OnscreenImage(image=str(MAINDIR)+'/Engine/activity_log.png',pos=(-1.2,0.35,0.3),scale=(0.375,0.75,0.086775))
+        self.activity_log.setTransparency(TransparencyAttrib.MAlpha)
+        self.activity_log_bg=OnscreenImage(image=str(MAINDIR)+'/Engine/activity_log_bg.png',pos=(-1.2,-0.35,-0.3),scale=(0.5,0.4,0.675))
+        self.activity_log_bg.setTransparency(TransparencyAttrib.MAlpha)
+        #spaces compensate the center text effect
+        self.logs=OnscreenText(text='   PyOS v0.10-alpha\n\n                              Added main menu in last update\n                                             Particle support has now become reality\n                                  but still needs some improvement\n\n\n          Feature in progress:\n      collision animation\n\n\nRelease date >>',pos=(-1.5,0.11,0), scale=(0.05,0.05,0.05),fg=(1,1,1,1))
+        self.shrug=OnscreenImage(image=str(MAINDIR)+'/Engine/shrug.png',pos=(-1.55,0.35,-0.5),scale=(0.1,1,0.0317))
+        self.shrug.setTransparency(TransparencyAttrib.MAlpha)
 
+        self.backgrnd=OnscreenImage(image=str(MAINDIR)+'/Engine/Stars.png',scale=(1.78,1,1))
+        self.backgrnd.setHpr(0,0,0)
+        self.backgrnd.reparentTo(self.Game_state.root_node)
+        self.backgrnd.setPos(0,0,0)
         self.moon=self.loader.loadModel(str(MAINDIR)+"/Engine/Icy.egg")
         self.moon.setScale(9,9,9)
         self.moon.setPos(0,-63,-46.5)
         self.moon.reparentTo(self.Game_state.root_node)
-        self.intro_planet=self.loader.loadModel(str(MAINDIR)+"/Engine/Earth2.egg")
+        self.intro_planet=self.loader.loadModel(str(MAINDIR)+"/Engine/tessena.egg")
+        self.intro_planet_atm=self.loader.loadModel(str(MAINDIR)+"/Engine/tessena_atm.egg")
         self.intro_planet.setPos(0,0,0)
+        self.intro_planet_atm.setPos(0,0,0)
         self.intro_planet.reparentTo(self.Game_state.root_node)
+        self.intro_planet_atm.reparentTo(self.Game_state.root_node)
         self.intro_planet.setHpr(-110,0,0)
+        self.intro_planet_atm.setHpr(-110,0,0)
         self.cam.setPos(0,-70,0)
 
         self.disable_mouse()
         # lighting
         dlight=self.Game_state.root_node.attachNewNode(DirectionalLight('menu_plight'))
         dlight.setHpr(0,-40,0)
-        self.Game_state.root_node.setLight(dlight)
+        self.moon.setLight(dlight)
+        self.intro_planet.setLight(dlight)
+        self.intro_planet_atm.setLight(dlight)
 
         self.task_mgr.add(self.rotate,'rotationtask') # penser a l'enlever
 
@@ -208,6 +226,7 @@ class world(ShowBase):
     
     def rotate(self,task):
         self.intro_planet.setHpr(self.intro_planet,(0.1,0,0))
+        self.intro_planet_atm.setHpr(self.intro_planet_atm,(0.07,0,0))
         self.moon.setHpr(self.moon,(0,0.01,0))
         return task.cont
     
@@ -218,10 +237,15 @@ class world(ShowBase):
         # transition phase
         self.menu_music.setLoop(False)
         self.menu_music.stop()
-
+        
+        
         self.taskMgr.remove('rotationtask')
         self.cam.setPos(0,0,0)
         self.Game_state.cleanup()
+        self.activity_log.hide()
+        self.activity_log_bg.hide()
+        self.logs.hide()
+        self.shrug.hide()
         self.start_button.hide()
         self.quit_button.hide()
         self.title_pic.hide()
@@ -264,7 +288,7 @@ class world(ShowBase):
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
         self.data=[
-        [0,0,0,0,0.003,0,0.30,0.30,0.30,100000.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"low_poly_planet01",False,0.1]
+        [0,0,0,-0.001,0.005,0,0.30,0.30,0.30,100000.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"low_poly_planet01",False,0.1]
         ,[10,0,0,0,0.003,0,0.05,0.05,0.05,20.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia_modified",False,0.1]
         ,[0,70,10,0,0.005,0,0.1,0.1,0.1,40.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False,1]
         ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True,0.1]
@@ -274,7 +298,7 @@ class world(ShowBase):
         ] 
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource,brakeforce] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list (first file must be the ground, the others are atmosphere models)
         #id: str - lightsource: boolean -
-        #if you want the hitbox to be correctly scaled, and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
+        #if you want the hitbox to be correctly scaled,and your body to have reasonable proportions, your 3d model must be a 5*5 sphere, or at least have these proportions
         
         # create the real data list, the one used by the program
         self.bodies=[]
@@ -519,6 +543,8 @@ class world(ShowBase):
                     b=len(temp1[self.stored_collision_count:len(temp1)])
                     for x in temp1[self.stored_collision_count:len(temp1)]:
                         self.particle.activate(x.getIntoNodePath().getParent(),self.Game_state.root_node)
+                elif len(temp1)<self.stored_collision_count:
+                    print('Collision ended')
                 self.stored_collision_count=len(temp1) #else do nothing
                 for c in range(0,len(temp1),2): 
                     entry=temp1[c]
