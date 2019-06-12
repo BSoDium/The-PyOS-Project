@@ -315,7 +315,7 @@ class world(ShowBase):
         
         # see https://www.panda3d.org/manual/?title=Collision_Solids for further collision interaction informations
         base.graphicsEngine.openWindows()
-        if 1:
+        try:
             print('\n[Loader manager]:\n')
             '''
             self.filters.setBlurSharpen(amount=0) # just messing around
@@ -406,10 +406,8 @@ class world(ShowBase):
 
             # task manager stuff comes here
             self.intro_loop()
-        '''
         except:
             sys.exit(":( something went wrong: files could not be loaded")
-        '''
         
         '''
         self.showsimpletext("All modules loaded, simulation running",(-1.42,0.95),(0.04,0.04),None,(1,1,1,True))
@@ -655,6 +653,13 @@ class world(ShowBase):
             if self.state[2]==self.collision_solids[f_pos].NodePath:
                 self.state[1]='free'
                 self.state[2]=None
+
+            # Lighting
+            if self.bodies[f_pos].is_lightSource:
+                self.light_Mngr[2*f_pos][1].removeNode()
+                self.light_Mngr[2*f_pos][1].removeNode()
+                self.filters.delVolumetricLighting() #temp
+            
             self.ctrav.remove_collider(self.collision_solids[f_pos].NodePath)
             self.bodies[f_pos].delete_body()
             
@@ -667,8 +672,7 @@ class world(ShowBase):
 
             self.particle.deactivate(self.collision_solids[f_pos].NodePath.getParent())
             self.particle.deactivate(self.collision_solids[i_pos].NodePath.getParent())
-            if self.bodies[f_pos].is_lightSource:
-                self.filters.delVolumetricLighting()
+                
             # scale updating ()
             ''' temporarly removed
             for c in range(0,len(self.bodies[i_pos].filelist),2):
@@ -678,9 +682,6 @@ class world(ShowBase):
             self.bodies=self.bodies[:f_pos]+self.bodies[f_pos+1:len(self.bodies)]
             self.collision_solids=self.collision_solids[:f_pos]+self.collision_solids[f_pos+1:len(self.collision_solids)]
             # update the light list
-            #if self.bodies[f_pos].is_lightsource:
-                #self.light_Mngr[2*f_pos][1].node.destroy()
-                #self.light_Mngr[2*f_pos+1][1].node.destroy()
             self.light_Mngr=self.light_Mngr[:2*f_pos]+self.light_Mngr[2*f_pos+2:len(self.light_Mngr)]
             
             
