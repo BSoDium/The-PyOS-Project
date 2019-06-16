@@ -15,6 +15,8 @@ except:
     sys.exit("please install library panda3d: pip install panda")
 import ctypes
 
+from PyOS_mod import body,hitbox,particle
+
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware() #windows fullscreen compatibility, fixes the getsystemmetrics bug
 fullscreen=True
@@ -49,75 +51,6 @@ class state(DirectObject):
         return None
 
 
-class body:
-    def __init__(self):
-        self.position=[0,0,0]
-        self.speed=[0,0,0]
-        self.scale=[1,1,1]
-        self.mass=1
-        self.is_static=True
-        self.filelist=[]
-        self.id=''
-        self.is_lightSource=False
-        self.brakeforce=0
-    
-    def fill_entries(self,list):
-        try:
-            test=list[14] # test the lenght of the list
-        except:
-            sys.exit('incorrect data entry, please modify your bodies data list')
-        self.position=list[0:3]
-        self.speed=list[3:6]
-        self.scale=list[6:9]
-        self.mass=list[9]
-        self.is_static=list[10]
-        self.filelist=list[11]
-        self.id=list[12]
-        self.is_lightSource=list[13]
-        self.brakeforce=list[14]
-        return 0
-    
-    def delete_body(self):
-        for c in range(0,len(self.filelist),2):
-            self.filelist[c].removeNode()
-        return 0
-
-class hitbox:
-    def __init__(self):
-        self.Volume=None
-        self.NodePath=None
-        self.CollisionNode=None
-    
-class particle:
-    def __init__(self):
-        self.config_path=None
-        self.particle_list=[] # list containing the whole particle scene stuff
-        self.garbage=[] # particles that will fade out and be destroy after a short period of time
-        return None
-    def activate(self,nodep,focus): # collision is the associated collision (defined when creating the particle)
-        try:
-            rank=[self.particle_list[x][1].getParent() for x in range(len(self.particle_list))].index(nodep)
-            self.particle_list[rank][0].start(parent=focus,renderParent=focus)
-            self.particle_list[rank][0].setScale(nodep.getScale())
-            self.particle_list[rank][0].setLightOff()
-        except: print('[WARNING]: incorrect rank value / generate_base_part() must be executed first')
-        return None
-    def deactivate(self,nodep):
-        try:
-            rank=[self.particle_list[x][1].getParent() for x in range(len(self.particle_list))].index(nodep)
-            self.particle_list[rank][0].softStop()
-            self.garbage.append(self.particle_list[rank][0])
-            self.particle_list.remove(self.particle_list[rank])
-        except: print('[WARNING]: incorrect rank value / generate_base_part() must be executed first')
-        return None
-    def add_particle(self,datalist): # the datalist is the self.queue list (we get the collision count and write the particle files accordingly)
-        try:
-            for x in datalist:
-                self.particle_list.append([ParticleEffect(),x.getIntoNodePath()]) # by default, there is only one particle per planet, more can be added in the sub-list
-                self.particle_list[len(self.particle_list)-1][0].loadConfig(str(MAINDIR)+self.config_path)
-        except: print('[WARNING]: incorrect datalist')
-        return None
-            
 
 
 class world(ShowBase):
@@ -288,12 +221,13 @@ class world(ShowBase):
         self.collision_solids=[] #collision related stuff - comments are useless - just RTFM
         self.light_Mngr=[]
         self.data=[
-        [0,0,0,-0.001,0.005,0,0.30,0.30,0.30,100000.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"low_poly_planet01",False,0.1]
+        [0,0,0,-0.00,0.003,0,0.30,0.30,0.30,100000.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_0.egg"),(0.1,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/lp_planet_1.egg"),(0.14,0,0)],"low_poly_planet01",False,0.1]
         ,[10,0,0,0,0.003,0,0.05,0.05,0.05,20.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/Icy.egg"),(0.05,0,0)],"Ottilia_modified",False,0.1]
         ,[0,70,10,0,0.005,0,0.1,0.1,0.1,40.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/asteroid_1.egg"),(0,0,0.2)],"Selena",False,1]
         ,[100,0,10,0,0,0,5,5,5,1000000,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/sun1.egg"),(0.01,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/sun1_atm.egg"),(0.01,0,0)],"Sun",True,0.1]
         ,[-100,50,70,0,0,0.003,0.15,0.15,0.15,1000.00,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/Earth2.egg"),(-0.1,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/Earth2_atm.egg"),(-0.15,0,0)],"big_fucking_planet",False,0.1]
         ,[200,0,0,-0.001,0,0.01,0.1,0.1,0.1,100000,False,[self.loader.loadModel(MAINDIR+"/Engine/realistic_asteroid.egg"),(0,0.01,0)],"spaceship",False,0]
+        ,[0,-120,0,0.004,0,0,0.3,0.3,0.3,100000,True,[self.loader.loadModel(str(MAINDIR)+"/Engine/FG1.egg"),(0.01,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/FG2.egg"),(0.01,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/FG3.egg"),(0.01,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/FG4.egg"),(0.01,0,0),self.loader.loadModel(str(MAINDIR)+"/Engine/FG5.egg"),(0.01,0,0)],"Frozen_giant",False,0.1]
         # insert your 3d models here, following the syntax (this is the default scene that will be loaded on startup)
         ] 
         # the correct reading syntax is [x,y,z,l,m,n,scale1,scale2,scale3,mass,static,[file,(H,p,r),file,(H,p,r)...],id,lightsource,brakeforce] for each body - x,y,z: position - l,m,n: speed - scale1,scale2,scale3: obvious (x,y,z) - mass: kg - static: boolean - [files]: panda3d readfiles list (first file must be the ground, the others are atmosphere models)
@@ -545,6 +479,7 @@ class world(ShowBase):
                         self.particle.activate(x.getIntoNodePath().getParent(),self.Game_state.root_node)
                 elif len(temp1)<self.stored_collision_count:
                     print('Collision ended')
+                    # at this point we should probably delete the particle object, as if we don't, it might still be updated, even if the collision doesn't exist in the self.queue anymore
                 self.stored_collision_count=len(temp1) #else do nothing
                 for c in range(0,len(temp1),2): 
                     entry=temp1[c]
