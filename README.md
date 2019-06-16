@@ -1,4 +1,5 @@
-## Python-Orbital-Mechanics V 0.10: 
+![banner](alternate_pyos_banner.png)
+## V 0.10-alpha: 
 The game mechanics do work, but there is still a lot of work to do (see project for more to-do-list info)
 Hitboxes are currently being worked on, tests are being made, please be patient. It is possible to import 3d models and test simulations using those, but it is very hard to master though, as I haven't created a syntax guide for users. If you still wish to do so, please contact us by creating a [new issue](https://github.com/the-fancy-corporation/The-PyOS-Project/issues/new/choose)
 
