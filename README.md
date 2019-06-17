@@ -1,9 +1,10 @@
 ![banner](alternate_pyos_banner.png)
 ## V 0.10-alpha: 
-The game mechanics do work, but there is still a lot of work to do (see project for more to-do-list info)
-Hitboxes are currently being worked on, tests are being made, please be patient. It is possible to import 3d models and test simulations using those, but it is very hard to master though, as I haven't created a syntax guide for users. If you still wish to do so, please contact us by creating a [new issue](https://github.com/the-fancy-corporation/The-PyOS-Project/issues/new/choose)
+A brand new menu has been added, with 3d animations and stuff, we hope you like it (see project for more to-do-list info). 
+Our current goal is to create realistic impact particles, using the integrated panda3d particle generator, which will contribute to the realism of the game and allow us to consider working on a well thought HUD for the players.
+It is possible to import 3d models and test simulations using those, but it is very hard to master though, as I haven't created a syntax guide for users. If you still wish to do so, please contact us by creating a [new issue](https://github.com/the-fancy-corporation/The-PyOS-Project/issues/new/choose)
 
-### Screenshots
+### Some screenshots
 ![here is the current scenery](Screenshots/Scrnshot_5.png)
 ![Some other cool shots](Screenshots/Scrnshot_6.png)
 
