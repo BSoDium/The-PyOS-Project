@@ -9,7 +9,7 @@ It is possible to import 3d models and test simulations using those, but it is v
 ![Some other cool shots](Screenshots/Scrnshot_6.png)
 
 ## Installation
-Just [download](https://github.com/the-fancy-corporation/The-PyOS-Project/releases/download/v0.10/PyOS.Release.0.10.zip) the latest release, extract the files, and run the **PyOS.exe** file *(if you're using windows, if you have linux or mac, just go to the correct folder)*.
+Just [download](https://github.com/the-fancy-corporation/The-PyOS-Project/releases/download/v0.10-alpha/PyOS-0.10-alpha.zip) the latest release, extract the files, and run the **PyOS.exe** file *(if you're using windows, if you have linux or mac, just go to the correct folder)*.
 There are no other requirements for this program to work
 
 ## Contribution to the building of the project
