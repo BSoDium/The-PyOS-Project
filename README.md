@@ -14,3 +14,7 @@ There are no other requirements for this program to work
 
 ## Contribution to the building of the project
 If you find what seems to be a bug, and is not listed in the [To-do-list](https://github.com/the-fancy-corporation/The-PyOS-Project/projects/1), please be kind and report it in the issues section, we will definitely appreciate your help.
+
+## Please support our work ;)
+Don't forget to star our project if you like it and/or want to be notified about updates:
+![pic](star_project.png)
