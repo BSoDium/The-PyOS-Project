@@ -9,7 +9,7 @@ It is possible to import 3d models and test simulations using those, but it is v
 ![Some other cool shots](Screenshots/Scrnshot_6.png)
 
 ## Installing test versions
-It is not recommended to use versions other than the ones merged into the **master** branch. Most of the other branches contain outdated or unstable versions, than may not be safe for common usage. However, if you wish to test our last commits, or simply read the code, please feel free to press the [Clone or download] button. Executing the code requires a basic python IDE, and the **panda3d** library.
+It is not recommended to use versions other than the ones merged into the **master** branch. Most of the other branches contain outdated or unstable versions, that may not be safe for common usage. However, if you wish to test our last commits, or simply read the code, please feel free to press the [Clone or download] button. Executing the code requires a basic python IDE, and the **panda3d** library.
 Install it using in the windows cmd or whatever shell you use:
 `pip install panda3d==1.10.3`
 ## Installation
