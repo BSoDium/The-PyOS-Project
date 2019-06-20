@@ -41,12 +41,14 @@ BLUR=False # debug
 MAINDIR=Filename.fromOsSpecific(os.getcwd())
 
 # discord stuff -------------------------------
-client_id = '591299679409668098' #bot id 
-RPC = Presence(client_id)
-RPC.connect()
-log=RPC.update(state="Version: 0.10-alpha", details="Crashing planets",large_image="alternate_logo",small_image=None)
-
-print(log)
+try:
+    client_id = '591299679409668098' #bot id 
+    RPC = Presence(client_id)
+    RPC.connect()
+    log=RPC.update(state="Version: 0.10-alpha", details="Crashing planets",large_image="alternate_logo",small_image=None)
+    print(log)
+except:
+    print('discord not connected')
 # discord presence is now active -------
 
 

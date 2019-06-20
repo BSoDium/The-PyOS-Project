@@ -1,4 +1,7 @@
 from panda3d.core import *
+from direct.particles.ParticleEffect import ParticleEffect
+import os
+MAINDIR=Filename.fromOsSpecific(os.getcwd())
 
 class body:
     def __init__(self):

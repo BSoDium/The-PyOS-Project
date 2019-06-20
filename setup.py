@@ -2,6 +2,7 @@ from setuptools import setup
 
 setup(
     name="PyOS",
+    version='0.10a',
     options = {
         'build_apps': {
             'include_patterns': [
@@ -23,5 +24,6 @@ setup(
                 'p3ptloader',
             ],
         }
-    }
+    },
+    packages=['pypresence']
 )
