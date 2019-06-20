@@ -22,16 +22,6 @@ except:
 
 from PyOS_mod import body,hitbox,particle
 
-
-# discord stuff -------------------------------
-client_id = '591299679409668098' #bot id
-RPC = Presence(client_id)
-RPC.connect()
-log=RPC.update(state="Version: 0.10-alpha", details="Crashing planets")
-
-print(log)
-# discord presence is now active -------
-
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware() #windows fullscreen compatibility, fixes the getsystemmetrics bug
 fullscreen=True
@@ -49,6 +39,16 @@ loadPrcFileData('','multisamples 2')
 SKYBOX='sky'
 BLUR=False # debug
 MAINDIR=Filename.fromOsSpecific(os.getcwd())
+
+# discord stuff -------------------------------
+client_id = '591299679409668098' #bot id 
+RPC = Presence(client_id)
+RPC.connect()
+log=RPC.update(state="Version: 0.10-alpha", details="Crashing planets",large_image="alternate_logo",small_image=None)
+
+print(log)
+# discord presence is now active -------
+
 
 class state(DirectObject):
     def __init__(self):
