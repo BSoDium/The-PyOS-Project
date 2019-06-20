@@ -15,7 +15,22 @@ except:
     sys.exit("please install library panda3d: pip install panda")
 import ctypes
 
+try:
+    from pypresence import Presence # discord presence
+except:
+    sys.exit("pypresence module missing")
+
 from PyOS_mod import body,hitbox,particle
+
+
+# discord stuff -------------------------------
+client_id = '591299679409668098' #bot id
+RPC = Presence(client_id)
+RPC.connect()
+log=RPC.update(state="Version: 0.10-alpha", details="Crashing planets")
+
+print(log)
+# discord presence is now active -------
 
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware() #windows fullscreen compatibility, fixes the getsystemmetrics bug
