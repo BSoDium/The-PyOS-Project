@@ -9,9 +9,11 @@ It is possible to import 3d models and test simulations using those, but it is v
 ![Some other cool shots](Screenshots/Scrnshot_6.png)
 
 ## Installing test versions
-It is not recommended to use versions other than the ones merged into the **master** branch. Most of the other branches contain outdated or unstable versions, that may not be safe for common usage. However, if you wish to test our last commits, or simply read the code, please feel free to press the [Clone or download] button. Executing the code requires a basic python IDE, and the **panda3d** library.
-Install it using in the windows cmd or whatever shell you use:
+- It is not recommended to use versions other than the ones merged into the **master** branch. Most of the other branches contain outdated or unstable versions, that may not be safe for common usage. However, if you wish to test our last commits, or simply read the code, please feel free to press the [Clone or download] button. Executing the code requires a basic python IDE, and the **panda3d** library.
+Install it through the windows cmd or whatever shell you use:
 `pip install panda3d==1.10.3`
+- it is also necessary that you have the **pypresence** lib working on your machine, repeat the same process to install it:
+`pip install pypresence`
 ## Installation
 Just [download](https://github.com/the-fancy-corporation/The-PyOS-Project/releases/download/v0.10-alpha/PyOS-0.10-alpha.zip) the latest release, extract the files, and run the **PyOS.exe** file *(if you're using windows, if you have linux or mac, just go to the correct folder)*.
 There are no other requirements for this program to work
@@ -24,3 +26,6 @@ coming soon in the next update
 ## Please support our work ;)
 Don't forget to star our project if you like it and/or want to be notified about updates:
 ![pic](star_project.png)
+
+## Special thanks and credits
+[![pypresence](https://img.shields.io/badge/using-pypresence-00bb88.svg?style=for-the-badge&logo=discord&logoWidth=20)](https://github.com/qwertyquerty/pypresence)
