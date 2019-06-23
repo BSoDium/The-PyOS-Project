@@ -23,9 +23,9 @@ class app(ShowBase):
 
         self.enableParticles()
         self.testpart=ParticleEffect()
-        self.testpart.loadConfig(MAINDIR+'/Engine/destruction_sphere.ptf')
+        self.testpart.loadConfig(MAINDIR+'/Engine/destruction_ring.ptf')
         self.testpart.start(parent=render,renderParent=render)
-        self.pointA,self.pointB=LPoint3f(0,0,0),LPoint3f(1,3,2)
+        self.pointA,self.pointB=LPoint3f(0,0,0),LPoint3f(1,0.1,0.3)
         vec = self.pointB - self.pointA
         norm=vec.length()
         H,P,R=-atan(vec[0]/vec[1])*180/pi+180,(-atan(vec[2]/vec[1])+pi/2)*180/pi,0 # cette formule vaut son poids en or X)

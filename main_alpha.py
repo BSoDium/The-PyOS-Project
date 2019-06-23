@@ -1,26 +1,50 @@
 from math import *
 import os,sys,random,time
+step=0
 try:
-    from direct.showbase.ShowBase import ShowBase
-    from direct.task import Task
-    from panda3d.core import *
-    from direct.showbase import DirectObject # event handling
-    from direct.gui.OnscreenText import OnscreenText
-    from direct.showbase.DirectObject import DirectObject
-    from direct.gui.DirectGui import *
-    from direct.filter.CommonFilters import CommonFilters
-    from direct.gui.OnscreenImage import OnscreenImage
-    from direct.particles.ParticleEffect import ParticleEffect
+    print("[ENGINE]: importing pand3d modules")
+    from direct.showbase.ShowBase import ShowBase #0
+    step+=1
+    print("ShowBase: OK")
+    from direct.task import Task #1
+    step+=1
+    print("Task: OK")
+    from panda3d.core import * #2
+    step+=1
+    print("Core: OK")
+    from direct.gui.OnscreenText import OnscreenText #3
+    step+=1
+    print("OnscreenText: OK")
+    from direct.showbase.DirectObject import DirectObject #4
+    step+=1
+    print("DirectObject: OK")
+    from direct.gui.DirectGui import * #5
+    step+=1
+    print("DirectGui: OK")
+    from direct.filter.CommonFilters import CommonFilters #6
+    step+=1
+    print("CommonFilters: OK")
+    from direct.gui.OnscreenImage import OnscreenImage #7
+    step+=1
+    print("OnscreenImage: OK")
+    from direct.particles.ParticleEffect import ParticleEffect #8
+    step+=1
+    print("ParticleEffect: OK")
 except:
-    sys.exit("please install library panda3d: pip install panda")
+    sys.exit("[WARNING]: failed to load panda3d modules, aborting launch\nError code: "+"00"+str(step))
 import ctypes
 
 try:
     from pypresence import Presence # discord presence
+    step+=1
+    print("Discord Presence: OK")
 except:
-    sys.exit("pypresence module missing")
+    sys.exit("[WARNING]: failed to load pypresence module, aborting launch\nError code: "+"00"+str(step))
 
-from PyOS_mod import body,hitbox,particle
+try:
+    from PyOS_mod import body,hitbox,particle
+    print("Class Body,hitbox,particle: OK")
+except: print("[WARNING]: failed to load classes from PyOS_mod")
 
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware() #windows fullscreen compatibility, fixes the getsystemmetrics bug
@@ -30,7 +54,7 @@ if fullscreen:
     loadPrcFileData('','win-size '+str(user32.GetSystemMetrics(0))+' '+str(user32.GetSystemMetrics(1))) # fullscreen stuff for one monitor, for multi monitor setup try 78 79
 loadPrcFileData('','window-title PyOS')
 loadPrcFileData('','load-display pandagl')
-#loadPrcFileData('','basic-shaders-only #f') # is that useful? 
+#loadPrcFileData('','basic-shaders-only #f') # is that useful? # obviously not
 loadPrcFileData('', 'textures-power-2 none')
 # Antialiasing
 loadPrcFileData('','framebuffer-multisample 1')
@@ -45,10 +69,12 @@ try:
     client_id = '591299679409668098' #bot id 
     RPC = Presence(client_id)
     RPC.connect()
-    log=RPC.update(state="Version: 0.10-alpha", details="Crashing planets",large_image="alternate_logo",small_image=None)
+    log=RPC.update(state="Version: 0.11", details="Playing Sandbox mode",large_image="logo",small_image=None)
+    print('[Pypresence module]: connection to discord RPC successful, log data follows')
+    print('[Pypresence module]:\n')
     print(log)
 except:
-    print('discord not connected')
+    print('[WARNING]: discord RPC connection failed, proceeding anyway')
 # discord presence is now active -------
 
 
@@ -75,15 +101,15 @@ class world(ShowBase):
         try:
             ShowBase.__init__(self)
         except:
-            sys.exit("something went wrong: error while loading ShowBase")
+            sys.exit("[WARNING]: unknown error: Showbase initialisation failed")
         
         
         # ------------------------------- Begin of parameter variables (pretty messy actually) ------------------------------------
         #debug ------
-        self.debug=False #REMEMBER TO TURN THIS OFF WHEN COMMITTING THIS TO GITHUB YOU GODDAM MORRON !!!
+        self.debug=False #[ /!\ IMPORTANT /!\ ] do not leave this value to True when you commit the code to github, as it is impossible to change once ingame, and modifies quite a lot of graphical parameters 
         #debug ------
 
-        self.stored_collision_count=0 # this counts the amount of collisions and allows us to detect the income of a new collision in order to create a new particle effect when it appears
+        self.stored_collisions=[] # this counts the amount of collisions and allows us to detect the income of a new collision in order to create a new particle effect when it appears
         
         self.timescale=5 # this can be changed at any moment, it represents the speed of the ingame time
         self.worldscale=0.1 # currently unused
@@ -129,33 +155,40 @@ class world(ShowBase):
         self.Game_state.root_node.setAntialias(AntialiasAttrib.MAuto)
         def quit():
             sys.exit(0)
+        
+        button_block_pos=(-1.2,0.35,0.25)
         maps_start=loader.loadModel(str(MAINDIR)+'/Engine/start.egg')
         maps_quit=loader.loadModel(str(MAINDIR)+'/Engine/quit.egg')
-        self.start_button=DirectButton(pos=(0,0.35,0.60),frameColor=(0,0,0,0),scale=(0.4,0.4,0.1368),geom=(maps_start.find('**/Start'),maps_start.find('**/Start_push'),maps_start.find('**/Start_on'),maps_start.find('**/Start')),command=self.loadgame)
-        self.quit_button=DirectButton(pos=(0,0.35,0.45),frameColor=(0,0,0,0),scale=(0.4,0.4,0.1368),geom=(maps_quit.find('**/Quit'),maps_quit.find('**/Quit_push'),maps_quit.find('**/Quit_on'),maps_quit.find('**/Quit')),command=quit)
-        self.title_pic=OnscreenImage(image=str(MAINDIR)+'/Engine/title.png',pos=(0,0.35,0.80), scale=(1,1,0.0504))
+        maps_set=loader.loadModel(str(MAINDIR)+'/Engine/set.egg')
+        self.start_button=DirectButton(pos=button_block_pos,frameColor=(0,0,0,0),scale=(0.717,0.4,0.221),geom=(maps_start.find('**/Start'),maps_start.find('**/Start_push'),maps_start.find('**/Start_on'),maps_start.find('**/Start')),command=self.loadgame)
+        self.quit_button=DirectButton(pos=(button_block_pos[0]+0.135,button_block_pos[1],button_block_pos[2]-0.4),frameColor=(0,0,0,0),scale=(1,0.4,0.221),geom=(maps_quit.find('**/Quit'),maps_quit.find('**/Quit_push'),maps_quit.find('**/Quit_on'),maps_quit.find('**/Quit')),command=quit)
+        self.settings_button=DirectButton(pos=(button_block_pos[0]-0.075,button_block_pos[1],button_block_pos[2]-0.2),frameColor=(0,0,0,0),scale=(0.56,0.4,0.221),geom=(maps_set.find('**/Set'),maps_set.find('**/Set_push'),maps_set.find('**/Set_on'),maps_set.find('**/Set')),command=self.not_implemented_yet) # settings not implemented yet
+        self.title_pic=OnscreenImage(image=str(MAINDIR)+'/Engine/title.png',pos=(0,0.35,0), scale=(0.51,1,0.5))
         self.title_pic.setTransparency(TransparencyAttrib.MAlpha)
-        self.activity_log=OnscreenImage(image=str(MAINDIR)+'/Engine/activity_log.png',pos=(-1.2,0.35,0.3),scale=(0.375,0.75,0.086775))
+        
+        pannel_pos_x=1.25
+        self.activity_log=OnscreenImage(image=str(MAINDIR)+'/Engine/activity_log.png',pos=(pannel_pos_x,0.35,0.30),scale=(0.375,0.75,0.086775))
         self.activity_log.setTransparency(TransparencyAttrib.MAlpha)
-        self.activity_log_bg=OnscreenImage(image=str(MAINDIR)+'/Engine/activity_log_bg.png',pos=(-1.2,-0.35,-0.3),scale=(0.5,0.4,0.675))
-        self.activity_log_bg.setTransparency(TransparencyAttrib.MAlpha)
+        #self.activity_log_bg=OnscreenImage(image=str(MAINDIR)+'/Engine/activity_log_bg.png',pos=(pannel_pos_x,-0.35,-0.3),scale=(0.5,0.4,0.675))
+        #self.activity_log_bg.setTransparency(TransparencyAttrib.MAlpha)
         #spaces compensate the center text effect
-        self.logs=OnscreenText(text='   PyOS v0.10-alpha\n\n                              Added main menu in last update\n                                             Particle support has now become reality\n                                  but still needs some improvement\n\n\n          Feature in progress:\n      collision animation\n\n\nRelease date >>',pos=(-1.5,0.11,0), scale=(0.05,0.05,0.05),fg=(1,1,1,1))
-        self.shrug=OnscreenImage(image=str(MAINDIR)+'/Engine/shrug.png',pos=(-1.55,0.35,-0.5),scale=(0.1,1,0.0317))
+        self.logs=OnscreenText(text='   PyOS v0.11       \n\n                              Added main menu in last update\n                                             Particle support has now become reality\n                                  but still needs some improvement\n\n\n          Feature in progress:\n      collision animation\n\n\nRelease date >>',pos=(pannel_pos_x-0.3,0.11,0.2), scale=(0.05,0.05,0.05),fg=(1,1,1,1))
+        self.shrug=OnscreenImage(image=str(MAINDIR)+'/Engine/shrug.png',pos=(pannel_pos_x-0.35,0.35,-0.48),scale=(0.1,1,0.0317))
         self.shrug.setTransparency(TransparencyAttrib.MAlpha)
 
         self.backgrnd=OnscreenImage(image=str(MAINDIR)+'/Engine/Stars.png',scale=(1.78,1,1))
-        self.backgrnd.setHpr(0,0,0)
         self.backgrnd.reparentTo(self.Game_state.root_node)
-        self.backgrnd.setPos(0,0,0)
+        self.backgrnd.setPos(0,0,0)  #doesn't actually work, I don't know why
+
+        #self.filters.set_gamma_adjust(0.9)
         self.moon=self.loader.loadModel(str(MAINDIR)+"/Engine/Icy.egg")
-        self.moon.setScale(9,9,9)
-        self.moon.setPos(0,-63,-46.5)
+        self.moon.setScale(0.2,0.2,0.2)
+        self.moon.setPos(0,50,0.5) # radius of orbit equals 50 units
         self.moon.reparentTo(self.Game_state.root_node)
         self.intro_planet=self.loader.loadModel(str(MAINDIR)+"/Engine/tessena.egg")
         self.intro_planet_atm=self.loader.loadModel(str(MAINDIR)+"/Engine/tessena_atm.egg")
-        self.intro_planet.setPos(0,0,0)
-        self.intro_planet_atm.setPos(0,0,0)
+        self.intro_planet.setPos(0,-35,0)
+        self.intro_planet_atm.setPos(0,-35,0)
         self.intro_planet.reparentTo(self.Game_state.root_node)
         self.intro_planet_atm.reparentTo(self.Game_state.root_node)
         self.intro_planet.setHpr(-110,0,0)
@@ -164,9 +197,17 @@ class world(ShowBase):
 
         self.disable_mouse()
         # lighting
-        dlight=self.Game_state.root_node.attachNewNode(DirectionalLight('menu_plight'))
-        dlight.setHpr(0,-40,0)
-        self.moon.setLight(dlight)
+        d=DirectionalLight('menu_dlight')
+        d.setColor(VBase4(0.631,0.369,1,1))
+        dlight=self.Game_state.root_node.attachNewNode(d)
+        dlight.setHpr(60,-30,0)
+
+        e=DirectionalLight('menu_dlight2')
+        e.setColor(VBase4(1,1,1,1))
+        elight=self.Game_state.root_node.attachNewNode(e)
+        elight.setHpr(60,-30,0)
+
+        self.moon.setLight(elight)
         self.intro_planet.setLight(dlight)
         self.intro_planet_atm.setLight(dlight)
 
@@ -177,7 +218,8 @@ class world(ShowBase):
     def rotate(self,task):
         self.intro_planet.setHpr(self.intro_planet,(0.1,0,0))
         self.intro_planet_atm.setHpr(self.intro_planet_atm,(0.07,0,0))
-        self.moon.setHpr(self.moon,(0,0.01,0))
+        self.moon.setHpr(self.moon,(0.2,0,0))
+        self.moon.setPos(50*cos(task.time*0.02),50*sin(task.time*0.02),0)
         return task.cont
     
     # end of menu subfunctions
@@ -193,11 +235,12 @@ class world(ShowBase):
         self.cam.setPos(0,0,0)
         self.Game_state.cleanup()
         self.activity_log.hide()
-        self.activity_log_bg.hide()
+        #self.activity_log_bg.hide()
         self.logs.hide()
         self.shrug.hide()
         self.start_button.hide()
         self.quit_button.hide()
+        self.settings_button.hide()
         self.title_pic.hide()
         
         
@@ -212,7 +255,7 @@ class world(ShowBase):
 
         # preparing the menu text list:
         self.menu_text=[]
-        self.menu_text.append(self.showsimpletext('The PyOS project V0.10 alpha',(0,0.4),(0.07,0.07),None,(1,1,1,True)))
+        self.menu_text.append(self.showsimpletext('The PyOS project V0.11',(0,0.4),(0.07,0.07),None,(1,1,1,True)))
         self.menu_text.append(self.showsimpletext('Game Paused',(0,0.3),(0.06,0.06),None,(1,1,1,True)))
 
         # btw I found something about energy transmission through thermal radiation. I think it uses some Boltzmann formula stuff. Link here:
@@ -334,8 +377,10 @@ class world(ShowBase):
                     self.light_Mngr.append([PointLight(c.id+"_other")])
                     self.light_Mngr[len(self.light_Mngr)-1].append(self.Game_state.root_node.attachNewNode(self.light_Mngr[len(self.light_Mngr)-1][0]))
                     self.light_Mngr[len(self.light_Mngr)-1][1].setPos(tuple(c.position))
-                    ''' # shadow stuff
+                    # shadow stuff
+                    
                     self.light_Mngr[len(self.light_Mngr)-1][1].node().setShadowCaster(True)
+                    '''
                     self.light_Mngr[len(self.light_Mngr)-1][1].node().getLens().setFov(40)
                     self.light_Mngr[len(self.light_Mngr)-1][1].node().getLens().setNearFar(10, 100)
                     '''
@@ -384,11 +429,6 @@ class world(ShowBase):
         except:
             sys.exit(":( something went wrong: files could not be loaded")
         
-        '''
-        self.showsimpletext("All modules loaded, simulation running",(-1.42,0.95),(0.04,0.04),None,(1,1,1,True))
-        self.showsimpletext("PyOS build V0.10",(-1.5,0.90),(0.04,0.04),None,(1,1,1,True))
-        self.showsimpletext("By l3alr0g",(-1.68,0.85),(0.04,0.04),None,(1,1,1,True))
-        '''
         
         # key bindings
         self.accept('backspace',self.system_break)
@@ -488,16 +528,20 @@ class world(ShowBase):
                 # the temp1 and temp2 lists have been created 
 
                 # run the check for the body-with-body collisions 
-                if len(temp1)>self.stored_collision_count:
+                if len(temp1)>len(self.stored_collisions):
                     print('[WARNING]: New collision') # debugging , detects when a collision occurs AND IT FUCKING WORKS BITCH !! (actually I created this system so that the particles linked to the collision are only created once)
-                    self.particle.add_particle(temp1[self.stored_collision_count:len(temp1)])
-                    b=len(temp1[self.stored_collision_count:len(temp1)])
-                    for x in temp1[self.stored_collision_count:len(temp1)]:
+                    self.particle.add_particle(temp1[len(self.stored_collisions):])
+                    #b=len(temp1[self.stored_collisions:len(temp1)])
+                    for x in temp1[len(self.stored_collisions):]:
                         self.particle.activate(x.getIntoNodePath().getParent(),self.Game_state.root_node)
-                elif len(temp1)<self.stored_collision_count:
+                elif len(temp1)<len(self.stored_collisions):
                     print('Collision ended')
+                    a=self.stored_collisions[len(temp1):]
+                    for x in a:
+                        self.particle.deactivate(x.getIntoNodePath().getParent())
+                        self.particle.deactivate(x.getFromNodePath().getParent())
                     # at this point we should probably delete the particle object, as if we don't, it might still be updated, even if the collision doesn't exist in the self.queue anymore
-                self.stored_collision_count=len(temp1) #else do nothing
+                self.stored_collisions=temp1 #else do nothing
                 for c in range(0,len(temp1),2): 
                     entry=temp1[c]
                     brakeforce=self.collision_log(entry,brakeforce)
@@ -634,8 +678,8 @@ class world(ShowBase):
 
             # Lighting
             if self.bodies[f_pos].is_lightSource:
-                self.light_Mngr[2*f_pos][1].removeNode()
-                self.light_Mngr[2*f_pos][1].removeNode()
+                self.Game_state.root_node.clearLight(self.light_Mngr[2*f_pos][1])
+                self.Game_state.root_node.clearLight(self.light_Mngr[2*f_pos][1])
                 self.filters.delVolumetricLighting() #temp
             
             self.ctrav.remove_collider(self.collision_solids[f_pos].NodePath)
@@ -870,8 +914,25 @@ class world(ShowBase):
             self.timescale*=0.80
         return None
     
+    def not_implemented_yet(self): # comes with self.follow function
+        self.sign=OnscreenImage(image=str(MAINDIR)+"/Engine/not_implemented_yet.png",pos=(0,0,0),scale=(0.5,0.5,0.5))  # scale is useless: already at scale (the pic is square shaped)
+        self.sign.setTransparency(TransparencyAttrib.MAlpha)
+        self.accept("escape",self.follow)
+        self.quit_button['state']=DGG.DISABLED
+        self.settings_button['state']=DGG.DISABLED
+        self.start_button['state']=DGG.DISABLED
+        return None
+    
+    def follow(self): # dependencies of the not_implemented_yet function
+        self.ignore("escape")
+        self.sign.destroy()
+        self.quit_button['state']=DGG.NORMAL
+        self.settings_button['state']=DGG.NORMAL
+        self.start_button['state']=DGG.NORMAL
+        return None
+
     def easter_egg(self):
-        return "please be patient, our hens are working on it"
+        return "please be patient, our hens are working on it" # I am not responsible for the bad quality of my humor
     
 
 launch=world()

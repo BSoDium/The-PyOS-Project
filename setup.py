@@ -2,9 +2,14 @@ from setuptools import setup
 
 setup(
     name="PyOS",
-    version='0.10a',
+    version='0.11',
     options = {
         'build_apps': {
+            'include_modules': [
+                'pypresence'
+            ],
+            'platforms': ['win_amd64'
+            ],
             'include_patterns': [
                 '**/*.png',
                 '**/*.jpg',
@@ -24,6 +29,5 @@ setup(
                 'p3ptloader',
             ],
         }
-    },
-    packages=['pypresence']
+    }
 )

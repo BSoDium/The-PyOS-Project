@@ -1,0 +1,87 @@
+<Comment> {
+  "egg-texture-cards -o set.egg -p 1082,430 Set.png Set_on.png Set_push.png"
+}
+<Texture> Set_push {
+  Set_push.png
+}
+<Texture> Set_on {
+  Set_on.png
+}
+<Texture> Set {
+  Set.png
+}
+<Group> {
+  <Switch> { 1 }
+  <Scalar> fps { 2 }
+  <VertexPool> vpool {
+    <Vertex> 0 {
+      -0.5 0.5 0
+      <UV> { 0 1 }
+    }
+    <Vertex> 1 {
+      -0.5 -0.5 0
+      <UV> { 0 0 }
+    }
+    <Vertex> 2 {
+      0.5 -0.5 0
+      <UV> { 1 0 }
+    }
+    <Vertex> 3 {
+      0.5 0.5 0
+      <UV> { 1 1 }
+    }
+    <Vertex> 4 {
+      -0.5 0.5 0
+      <UV> { 0 1 }
+    }
+    <Vertex> 5 {
+      -0.5 -0.5 0
+      <UV> { 0 0 }
+    }
+    <Vertex> 6 {
+      0.5 -0.5 0
+      <UV> { 1 0 }
+    }
+    <Vertex> 7 {
+      0.5 0.5 0
+      <UV> { 1 1 }
+    }
+    <Vertex> 8 {
+      -0.5 0.5 0
+      <UV> { 0 1 }
+    }
+    <Vertex> 9 {
+      -0.5 -0.5 0
+      <UV> { 0 0 }
+    }
+    <Vertex> 10 {
+      0.5 -0.5 0
+      <UV> { 1 0 }
+    }
+    <Vertex> 11 {
+      0.5 0.5 0
+      <UV> { 1 1 }
+    }
+  }
+  <Group> Set {
+    <Polygon> {
+      <RGBA> { 1 1 1 1 }
+      <TRef> { Set }
+      <VertexRef> { 0 1 2 3 <Ref> { vpool } }
+    }
+  }
+  <Group> Set_on {
+    <Polygon> {
+      <RGBA> { 1 1 1 1 }
+      <TRef> { Set_on }
+      <VertexRef> { 4 5 6 7 <Ref> { vpool } }
+    }
+  }
+  <Group> Set_push {
+    <Polygon> {
+      <RGBA> { 1 1 1 1 }
+      <TRef> { Set_push }
+      <VertexRef> { 8 9 10 11 <Ref> { vpool } }
+    }
+  }
+}

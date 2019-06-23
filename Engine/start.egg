@@ -1,5 +1,5 @@
 <Comment> {
-  "egg-texture-cards -o start.egg -p 700,60 Start.png Start_on.png Start_push.png"
+  "egg-texture-cards -o start.egg -p 1394,430 Start.png Start_on.png Start_push.png"
 }
 <Texture> Start_push {
   Start_push.png

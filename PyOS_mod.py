@@ -54,7 +54,7 @@ class particle:
             self.particle_list[rank][0].start(parent=focus,renderParent=focus)
             self.particle_list[rank][0].setScale(nodep.getScale())
             self.particle_list[rank][0].setLightOff()
-        except: print('[WARNING]: incorrect rank value / generate_base_part() must be executed first')
+        except: print('[WARNING]: incorrect rank value when calling activate() / generate_base_part() must be executed first')
         return None
     def deactivate(self,nodep):
         try:
@@ -62,13 +62,13 @@ class particle:
             self.particle_list[rank][0].softStop()
             self.garbage.append(self.particle_list[rank][0])
             self.particle_list.remove(self.particle_list[rank])
-        except: print('[WARNING]: incorrect rank value / generate_base_part() must be executed first')
+        except: print('[WARNING]: incorrect rank value when calling deactivate() / generate_base_part() must be executed first')
         return None
     def add_particle(self,datalist): # the datalist is the self.queue list (we get the collision count and write the particle files accordingly)
         try:
             for x in datalist:
                 self.particle_list.append([ParticleEffect(),x.getIntoNodePath()]) # by default, there is only one particle per planet, more can be added in the sub-list
                 self.particle_list[len(self.particle_list)-1][0].loadConfig(str(MAINDIR)+self.config_path)
-        except: print('[WARNING]: incorrect datalist')
+        except: print('[WARNING]: incorrect datalist provided when calling add_particle()')
         return None
             
