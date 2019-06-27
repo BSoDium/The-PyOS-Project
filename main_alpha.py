@@ -52,7 +52,7 @@ fullscreen=True
 if fullscreen:
     loadPrcFileData('', 'fullscreen true') 
     loadPrcFileData('','win-size '+str(user32.GetSystemMetrics(0))+' '+str(user32.GetSystemMetrics(1))) # fullscreen stuff for one monitor, for multi monitor setup try 78 79
-loadPrcFileData('','window-title PyOS')
+loadPrcFileData('','window-title The PyOS Project')
 loadPrcFileData('','load-display pandagl')
 #loadPrcFileData('','basic-shaders-only #f') # is that useful? # obviously not
 loadPrcFileData('', 'textures-power-2 none')
@@ -69,7 +69,7 @@ try:
     client_id = '591299679409668098' #bot id 
     RPC = Presence(client_id)
     RPC.connect()
-    log=RPC.update(state="Version: 0.11", details="Playing Sandbox mode",large_image="logo",small_image=None)
+    log=RPC.update(state="Version: 0.11", details="In the menus",large_image="logo",small_image=None)
     print('[Pypresence module]: connection to discord RPC successful, log data follows')
     print('[Pypresence module]:\n')
     print(log)
@@ -91,10 +91,13 @@ class state(DirectObject):
         self.root_node=None
         self.root_node=NodePath('State Root')
         self.root_node.reparentTo(base.render)
+        # just in case
+        base.camera.setPos(0,0,0) # doesn't solve my bug with the [quit to main menu] button
+        base.camera.setHpr(0,0,0)
         return None
 
 
-
+IS_FIRST_ITERATION=1 # this var allows the user to skip the launch splashscreen when comming back to the main menu
 
 class world(ShowBase):
     def __init__(self):
@@ -112,7 +115,7 @@ class world(ShowBase):
         self.stored_collisions=[] # this counts the amount of collisions and allows us to detect the income of a new collision in order to create a new particle effect when it appears
         
         self.timescale=5 # this can be changed at any moment, it represents the speed of the ingame time
-        self.worldscale=0.1 # currently unused
+        self.worldscale=0.1 # currently useless
         
         self.camera_delta=0.5 # camera delta displacement
         self.sensitivity_x,self.sensitivity_y=20,20
@@ -121,7 +124,7 @@ class world(ShowBase):
         self.state=['paused','free',None] # state of things: [simulation paused/running,camera following object/free,followed object/None]
         print('free mode on')
         self.iteration=0 #iteration for the menu to be drawn once
-        self.collision_status=False # Keep this on False, that's definitely not a setting # currently unused
+        self.collision_status=False # Keep this on False, that's definitely not a setting # currently useless
 
         self.u_constant=6.67408*10**(-11) #just a quick reminder
         self.u_radius=5 #just what I said earlier 
@@ -130,6 +133,7 @@ class world(ShowBase):
         
 
         self.Game_state=state()
+        self.Game_state.cleanup() # better safe than sorry
         self.taskMgr.add(self.wait,'wait_task')
         self.setBackgroundColor(0,0,0)
         
@@ -151,11 +155,14 @@ class world(ShowBase):
         self.menu_music.setLoop(True)
         self.menu_music.play()
         # filters
-        self.filters = CommonFilters(base.win, base.cam)
+        try:
+            self.filters = CommonFilters(self.win, self.cam)
+        except: pass
         self.Game_state.root_node.setAntialias(AntialiasAttrib.MAuto)
         def quit():
             sys.exit(0)
         
+
         button_block_pos=(-1.2,0.35,0.25)
         maps_start=loader.loadModel(str(MAINDIR)+'/Engine/start.egg')
         maps_quit=loader.loadModel(str(MAINDIR)+'/Engine/quit.egg')
@@ -176,14 +183,14 @@ class world(ShowBase):
         self.shrug=OnscreenImage(image=str(MAINDIR)+'/Engine/shrug.png',pos=(pannel_pos_x-0.35,0.35,-0.48),scale=(0.1,1,0.0317))
         self.shrug.setTransparency(TransparencyAttrib.MAlpha)
 
-        self.backgrnd=OnscreenImage(image=str(MAINDIR)+'/Engine/Stars.png',scale=(1.78,1,1))
+        self.backgrnd=OnscreenImage(image=str(MAINDIR)+'/Engine/Stars.png',scale=(85.44,1,48),pos=(0,60,0))
         self.backgrnd.reparentTo(self.Game_state.root_node)
-        self.backgrnd.setPos(0,0,0)  #doesn't actually work, I don't know why
+        
 
         #self.filters.set_gamma_adjust(0.9)
         self.moon=self.loader.loadModel(str(MAINDIR)+"/Engine/Icy.egg")
         self.moon.setScale(0.2,0.2,0.2)
-        self.moon.setPos(0,50,0.5) # radius of orbit equals 50 units
+        self.moon.setPos(0,50,0) # radius of orbit equals 50 units
         self.moon.reparentTo(self.Game_state.root_node)
         self.intro_planet=self.loader.loadModel(str(MAINDIR)+"/Engine/tessena.egg")
         self.intro_planet_atm=self.loader.loadModel(str(MAINDIR)+"/Engine/tessena_atm.egg")
@@ -219,7 +226,7 @@ class world(ShowBase):
         self.intro_planet.setHpr(self.intro_planet,(0.1,0,0))
         self.intro_planet_atm.setHpr(self.intro_planet_atm,(0.07,0,0))
         self.moon.setHpr(self.moon,(0.2,0,0))
-        self.moon.setPos(50*cos(task.time*0.02),50*sin(task.time*0.02),0)
+        self.moon.setPos(50*sin(task.time*0.02),50*cos(task.time*0.02),0)
         return task.cont
     
     # end of menu subfunctions
@@ -254,9 +261,14 @@ class world(ShowBase):
         self.win.requestProperties(wp)
 
         # preparing the menu text list:
-        self.menu_text=[]
-        self.menu_text.append(self.showsimpletext('The PyOS project V0.11',(0,0.4),(0.07,0.07),None,(1,1,1,True)))
-        self.menu_text.append(self.showsimpletext('Game Paused',(0,0.3),(0.06,0.06),None,(1,1,1,True)))
+        quit_to_desk=self.loader.loadModel(str(MAINDIR)+"/Engine/quit_to_desktop.egg")
+        quit_to_menu=self.loader.loadModel(str(MAINDIR)+"/Engine/quit_to_menu.egg")
+        resume=self.loader.loadModel(str(MAINDIR)+"/Engine/resume.egg")
+        self.paused_menu_text=[]
+        global_tempPosx=-1
+        self.paused_menu_text.append(DirectButton(pos=(global_tempPosx-0.065,0,-0.2),frameColor=(0,0,0,0),scale=(1,0.4,0.211),geom=(quit_to_desk.find('**/quit_to_desktop'),quit_to_desk.find('**/quit_to_desktop_push'),quit_to_desk.find('**/quit_to_desktop_on'),quit_to_desk.find('**/quit_to_desktop')),command=self.system_break))
+        self.paused_menu_text.append(DirectButton(pos=(global_tempPosx,0,0),frameColor=(0,0,0,0),scale=(1.12,0.4,0.211),geom=(quit_to_menu.find('**/quit_to_menu'),quit_to_menu.find('**/quit_to_menu_push'),quit_to_menu.find('**/quit_to_menu_on'),quit_to_menu.find('**/quit_to_menu')),command=self.ingame_back_to_menu))
+        self.paused_menu_text.append(DirectButton(pos=(global_tempPosx-0.325,0,0.2),frameColor=(0,0,0,0),scale=(0.47,0.4,0.211),geom=(resume.find('**/resume'),resume.find('**/resume_push'),resume.find('**/resume_on'),resume.find('**/resume')),command=self.toggle_pause))
 
         # btw I found something about energy transmission through thermal radiation. I think it uses some Boltzmann formula stuff. Link here:
         # https://fr.wikibooks.org/wiki/Plan%C3%A9tologie/La_temp%C3%A9rature_de_surface_des_plan%C3%A8tes#Puissance_re%C3%A7ue_par_la_Terre
@@ -368,7 +380,7 @@ class world(ShowBase):
                 self.collision_solids[len(self.collision_solids)-1].CollisionNode.addSolid(self.collision_solids[len(self.collision_solids)-1].Volume) #I am definitely not explaining that
                 temp=None
                 if self.debug:
-                    loadPrcFileData('', 'show-frame-rate-meter true')
+                    loadPrcFileData("", "show-frame-rate-meter  1")
                     self.collision_solids[len(self.collision_solids)-1].NodePath.show() # debugging purposes only
                 
                 print("collision: ok")
@@ -431,7 +443,6 @@ class world(ShowBase):
         
         
         # key bindings
-        self.accept('backspace',self.system_break)
         self.accept('escape',self.toggle_pause)
         self.accept('mouse1',self.handle_select,[True])
         self.accept('wheel_up',self.handle_scrolling,[True]) # center button (just a quick test)
@@ -511,14 +522,14 @@ class world(ShowBase):
         self.taskMgr.remove('showIntroPic')
         return None
     
-    def placement_Mngr(self,task): # main game mechanics, frame updating function (kinda, all pausing and menu functions must be applied here
+    def placement_Mngr(self,task): # void main = main game mechanics, frame updating function (kinda, all pausing and menu functions must be applied here)
         if self.state[0]=='running' or not task.time:
             self.ctrav.traverse(self.Game_state.root_node)
             #self.queue = CollisionHandlerQueue() # update the collision queue
             brakeforce=[0 for n in range(len(self.bodies))] # create an empty brakeforce list
             if self.queue.getNumEntries():
                 if self.debug:
-                    print(self.queue.getNumEntries()) # debug
+                    print(self.queue.getNumEntries()) # debug, shows only one digit most of the time
                 # now we have to create a temp list containing only the Entries that refer to collisions between bodies,
                 # not cursor-type collisions:
                 temp1,temp2=[],[]
@@ -656,7 +667,7 @@ class world(ShowBase):
             inverted=True
             into_pos,from_pos=from_pos,into_pos
         else:
-            inverted=False # currently unused
+            inverted=False # currently useless
         brakeforce[from_pos]=self.bodies[from_pos].brakeforce # get the force given in the data list
         # those are the two positions of the nodepaths, now we need to know which one is bigger, in order to obtain the fusion effect
         # from_pos is the smaller body, into_pos is the bigger one
@@ -668,7 +679,8 @@ class world(ShowBase):
             print("colliding") # debug, makes the game laggy (only activated when the self.debug var is on)
         interior = entry.getInteriorPoint(self.Game_state.root_node) # default
         surface = entry.getSurfacePoint(self.Game_state.root_node)
-        print((interior - surface).length()) # debug, doesn't slow the game down too much so I haven't removed it
+        if self.debug:
+            print((interior - surface).length()) # debug, doesn't slow the game down too much so I haven't removed it
 
 
         if (interior - surface).length() >= self.u_radius*2*sum(self.bodies[f_pos].scale)/3: # this is the body deletion routine
@@ -761,9 +773,19 @@ class world(ShowBase):
         self.state[0]=temp[self.state[0]==temp[0]] # switches between paused and running
         self.iteration=0
         if self.state[0]=='paused':
+            # discord rpc updating
+            try: 
+                RPC.update(state="Version: 0.11", details="In the menus",large_image="logo",small_image=None)
+            except: pass
             self.handle_menu(self.iteration)
         else:
+            # discord RPC updating
+            try: 
+                RPC.update(state="Version: 0.11", details="In a simulation",large_image="logo",small_image=None)
+            except: pass
+            
             self.filters.del_blur_sharpen()
+            self.filters.set_gamma_adjust(1)
             # make the mouse invisible
             self.hidden_mouse=True
             wp = WindowProperties()
@@ -772,7 +794,7 @@ class world(ShowBase):
             self.center_mouse()
 
             self.win.requestProperties(wp)
-            for u in self.menu_text:
+            for u in self.paused_menu_text:
                 u.hide()
         return None
     
@@ -796,7 +818,8 @@ class world(ShowBase):
     
     def draw_menu(self):
         self.filters.setBlurSharpen(amount=0)
-        for u in self.menu_text:
+        self.filters.set_gamma_adjust(1.7)
+        for u in self.paused_menu_text:
                 u.show()
         return None
     
@@ -934,6 +957,31 @@ class world(ShowBase):
     def easter_egg(self):
         return "please be patient, our hens are working on it" # I am not responsible for the bad quality of my humor
     
+    def ingame_back_to_menu(self): # large name, I know, I had no ideas
+        self.filters.set_gamma_adjust(1)
+        for u in self.paused_menu_text:
+            u.hide()
+        self.filters.del_blur_sharpen()
+        self.Game_state.cleanup()
+        # we have to delete all the taskManager routines we implemented during the simulation
+        # here comes the whole stuff:
+        self.taskMgr.remove('mousePositionTask')
+        self.taskMgr.remove('frameUpdateTask')
+        self.taskMgr.remove('MusicHandle')
+        self.taskMgr.remove('cameraPosition')
+        # end of task manager stuff
+        self.stored_collisions=[]
+        self.watched=None
+        self.state=['paused','free',None]
+        self.iteration=0
+
+        self.filters.delVolumetricLighting() # temporary, as I have to implement multiple light source handling
+
+        # music 
+        self.current_song.stop()
+        
+        self.menu()
+        return None
 
 launch=world()
 base.run()

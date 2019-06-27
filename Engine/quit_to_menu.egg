@@ -1,0 +1,87 @@
+<Comment> {
+  "egg-texture-cards -o quit_to_menu.egg -p 1060,199 quit_to_menu.png quit_to_menu_on.png quit_to_menu_push.png"
+}
+<Texture> quit_to_menu_push {
+  quit_to_menu_push.png
+}
+<Texture> quit_to_menu_on {
+  quit_to_menu_on.png
+}
+<Texture> quit_to_menu {
+  quit_to_menu.png
+}
+<Group> {
+  <Switch> { 1 }
+  <Scalar> fps { 2 }
+  <VertexPool> vpool {
+    <Vertex> 0 {
+      -0.5 0.5 0
+      <UV> { 0 1 }
+    }
+    <Vertex> 1 {
+      -0.5 -0.5 0
+      <UV> { 0 0 }
+    }
+    <Vertex> 2 {
+      0.5 -0.5 0
+      <UV> { 1 0 }
+    }
+    <Vertex> 3 {
+      0.5 0.5 0
+      <UV> { 1 1 }
+    }
+    <Vertex> 4 {
+      -0.5 0.5 0
+      <UV> { 0 1 }
+    }
+    <Vertex> 5 {
+      -0.5 -0.5 0
+      <UV> { 0 0 }
+    }
+    <Vertex> 6 {
+      0.5 -0.5 0
+      <UV> { 1 0 }
+    }
+    <Vertex> 7 {
+      0.5 0.5 0
+      <UV> { 1 1 }
+    }
+    <Vertex> 8 {
+      -0.5 0.5 0
+      <UV> { 0 1 }
+    }
+    <Vertex> 9 {
+      -0.5 -0.5 0
+      <UV> { 0 0 }
+    }
+    <Vertex> 10 {
+      0.5 -0.5 0
+      <UV> { 1 0 }
+    }
+    <Vertex> 11 {
+      0.5 0.5 0
+      <UV> { 1 1 }
+    }
+  }
+  <Group> quit_to_menu {
+    <Polygon> {
+      <RGBA> { 1 1 1 1 }
+      <TRef> { quit_to_menu }
+      <VertexRef> { 0 1 2 3 <Ref> { vpool } }
+    }
+  }
+  <Group> quit_to_menu_on {
+    <Polygon> {
+      <RGBA> { 1 1 1 1 }
+      <TRef> { quit_to_menu_on }
+      <VertexRef> { 4 5 6 7 <Ref> { vpool } }
+    }
+  }
+  <Group> quit_to_menu_push {
+    <Polygon> {
+      <RGBA> { 1 1 1 1 }
+      <TRef> { quit_to_menu_push }
+      <VertexRef> { 8 9 10 11 <Ref> { vpool } }
+    }
+  }
+}
