@@ -31,3 +31,6 @@ Don't forget to star our project if you like it and/or want to be notified about
 
 ## Special thanks and credits
 [![pypresence](https://img.shields.io/badge/using-pypresence-00bb88.svg?style=for-the-badge&logo=discord&logoWidth=20)](https://github.com/qwertyquerty/pypresence)
+
+## This project is paused (momentarily)
+College doesn't give me enough spare time to continue working on this amazing project. However, I (l3alr0g) still plan on continuing it when I get my studies done. Sooo, see ya in one year ;)
